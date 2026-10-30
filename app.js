@@ -12,7 +12,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Rodaje Suave / Recuperación',
     shortName: 'Rodaje Suave',
     zone: 'Z1 - Z2 (60-75% FC)',
-    color: '#10b981', // emerald
+    color: '#10b981',
     badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
     primaryBenefit: 'Densidad mitocondrial, capilarización y oxidación de grasas',
     recoveryHours: '12 - 24 h',
@@ -32,7 +32,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Tempo / Umbral de Lactato',
     shortName: 'Tempo / Umbral',
     zone: 'Z3 - Z4 (82-89% FC)',
-    color: '#f59e0b', // amber
+    color: '#f59e0b',
     badgeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
     primaryBenefit: 'Aclaramiento de lactato y sostener ritmos altos por más tiempo',
     recoveryHours: '36 - 48 h',
@@ -52,7 +52,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Series / Intervalos VO2max',
     shortName: 'Series VO2max',
     zone: 'Z5 (92-100% FC)',
-    color: '#ef4444', // rose/red
+    color: '#ef4444',
     badgeClass: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
     primaryBenefit: 'Volumen sistólico cardíaco, potencia aeróbica máxima (VO2max)',
     recoveryHours: '48 - 72 h',
@@ -72,7 +72,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Tirada Larga / Fondo Aeróbico',
     shortName: 'Tirada Larga',
     zone: 'Z2 (68-78% FC)',
-    color: '#38bdf8', // sky
+    color: '#38bdf8',
     badgeClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
     primaryBenefit: 'Reservas de glucógeno, resistencia a la fatiga y fortaleza tendinosa',
     recoveryHours: '36 - 60 h',
@@ -92,7 +92,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Fartlek / Cambios de Ritmo',
     shortName: 'Fartlek',
     zone: 'Z2 a Z4 Variable',
-    color: '#a855f7', // purple
+    color: '#a855f7',
     badgeClass: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
     primaryBenefit: 'Transición aeróbica-anaeróbica y flexibilidad metabólica',
     recoveryHours: '24 - 48 h',
@@ -112,7 +112,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Cuestas / Potencia Específica',
     shortName: 'Cuestas',
     zone: 'Z4 - Z5 / Neuromuscular',
-    color: '#f97316', // orange
+    color: '#f97316',
     badgeClass: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
     primaryBenefit: 'Fuerza específica de glúteos/gemelos y economía de zancada con bajo impacto',
     recoveryHours: '36 - 48 h',
@@ -132,7 +132,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Fuerza / Core / Prevención',
     shortName: 'Fuerza & Core',
     zone: 'Neuromuscular',
-    color: '#ec4899', // pink
+    color: '#ec4899',
     badgeClass: 'bg-pink-500/15 text-pink-400 border-pink-500/30',
     primaryBenefit: 'Estabilidad pélvica, prevención de lesiones y economía de carrera',
     recoveryHours: '24 - 48 h',
@@ -152,7 +152,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Competición / Test de Campo',
     shortName: 'Carrera / Test',
     zone: 'Z4 - Z5 (Esfuerzo Máx)',
-    color: '#eab308', // yellow
+    color: '#eab308',
     badgeClass: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
     primaryBenefit: 'Expresión máxima de rendimiento y calibración de zonas VDOT',
     recoveryHours: '72 - 120 h',
@@ -172,7 +172,7 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Descanso / Supercompensación',
     shortName: 'Descanso',
     zone: 'Recuperación',
-    color: '#64748b', // slate
+    color: '#64748b',
     badgeClass: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
     primaryBenefit: 'Reparación fibrilar, síntesis proteica y equilibrio hormonal',
     recoveryHours: '0 h',
@@ -225,7 +225,7 @@ function getLocalISODate(offsetDays = 0) {
 
 function getMondayOfWeek(weekOffset = 0) {
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 (Dom) - 6 (Sáb)
+  const dayOfWeek = now.getDay();
   const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   const monday = new Date(now);
   monday.setDate(now.getDate() + diffToMonday + weekOffset * 7);
@@ -290,8 +290,7 @@ function decimalMinutesToPaceString(decMin) {
 function calculateVDOTFromRace(distanceMeters, timeSeconds) {
   if (!distanceMeters || !timeSeconds || timeSeconds <= 0) return null;
   const tMin = timeSeconds / 60;
-  const velocity = distanceMeters / tMin; // metros por minuto
-  // Fórmula de Jack Daniels y Gilbert
+  const velocity = distanceMeters / tMin;
   const vo2 = -4.60 + 0.182258 * velocity + 0.000104 * velocity * velocity;
   const percentMax =
     0.8 +
@@ -319,25 +318,22 @@ function getRunnerVDOT(profile) {
   if (profile.vo2max && Number(profile.vo2max) > 25) {
     return Number(profile.vo2max);
   }
-  return 45.0; // Valor por defecto razonable
+  return 45.0;
 }
 
-// Devuelve velocidad (m/min) para un % de VO2max dado un VDOT
 function getPacePerKmForVDOTIntensity(vdot, intensityPct) {
   const targetVo2 = vdot * intensityPct;
-  // Resolver 0.000104 * v^2 + 0.182258 * v - (4.60 + targetVo2) = 0
   const a = 0.000104;
   const b = 0.182258;
   const c = -(4.6 + targetVo2);
-  const velocity = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a); // m/min
+  const velocity = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
   const secondsPerKm = (1000 / velocity) * 60;
   return secondsPerKm;
 }
 
 function predictRaceTimeSeconds(vdot, distanceMeters) {
-  // Búsqueda binaria de tiempo para distancia dado el VDOT
-  let low = 600; // 10 min
-  let high = 36000; // 10 horas
+  let low = 600;
+  let high = 36000;
   for (let i = 0; i < 30; i++) {
     const mid = (low + high) / 2;
     const est = calculateVDOTFromRace(distanceMeters, mid);
@@ -353,7 +349,7 @@ function predictRaceTimeSeconds(vdot, distanceMeters) {
 function getTrainingZones(profile) {
   const maxHR = Number(profile.maxHR) || (220 - (Number(profile.age) || 30));
   const restHR = Number(profile.restHR) || 55;
-  const hrr = Math.max(maxHR - restHR, 80); // Reserva cardíaca Karvonen
+  const hrr = Math.max(maxHR - restHR, 80);
   const vdot = getRunnerVDOT(profile);
 
   const calcHR = (pct) => Math.round(restHR + hrr * pct);
@@ -462,7 +458,6 @@ function createDefaultState() {
       }
     ],
     workouts: [
-      // Semana pasada (completados para mostrar historial en gráficas)
       {
         id: 'w-prev-1',
         date: dayISO(-6),
@@ -531,10 +526,9 @@ function createDefaultState() {
         actualRpe: 6,
         notes: 'Últimos 3 km a 4:50 sintiéndome fuerte.'
       },
-      // Semana actual
       {
         id: 'w-curr-1',
-        date: dayISO(0), // Lunes
+        date: dayISO(0),
         type: 'rest',
         title: 'Descanso Activo y Movilidad',
         status: 'completed',
@@ -551,7 +545,7 @@ function createDefaultState() {
       },
       {
         id: 'w-curr-2',
-        date: dayISO(1), // Martes
+        date: dayISO(1),
         type: 'easy',
         title: 'Rodaje Base Aeróbica Z2',
         status: 'completed',
@@ -568,7 +562,7 @@ function createDefaultState() {
       },
       {
         id: 'w-curr-3',
-        date: dayISO(2), // Miércoles
+        date: dayISO(2),
         type: 'tempo',
         title: '2km Z2 + 6km Tempo Umbral + 1.5km Z1',
         status: 'modified',
@@ -585,7 +579,7 @@ function createDefaultState() {
       },
       {
         id: 'w-curr-4',
-        date: dayISO(3), // Jueves
+        date: dayISO(3),
         type: 'strength',
         title: 'Fuerza Específica Running & Core',
         status: 'planned',
@@ -602,7 +596,7 @@ function createDefaultState() {
       },
       {
         id: 'w-curr-5',
-        date: dayISO(4), // Viernes
+        date: dayISO(4),
         type: 'intervals',
         title: '6x800m VO2max en Pista (rec 200m trote)',
         status: 'planned',
@@ -619,7 +613,7 @@ function createDefaultState() {
       },
       {
         id: 'w-curr-6',
-        date: dayISO(5), // Sábado
+        date: dayISO(5),
         type: 'easy',
         title: 'Rodaje Suave Regenerativo Pre-Fondo',
         status: 'planned',
@@ -636,7 +630,7 @@ function createDefaultState() {
       },
       {
         id: 'w-curr-7',
-        date: dayISO(6), // Domingo
+        date: dayISO(6),
         type: 'long',
         title: 'Tirada Larga 18 km (Últimos 4 km a Ritmo Media Maratón)',
         status: 'planned',
@@ -757,7 +751,6 @@ function updateHeaderBadges() {
   const vdotEl = document.getElementById('headerVdotValue');
   if (vdotEl) vdotEl.textContent = vdot.toFixed(1);
 
-  // Cumplimiento semanal
   const monday = getMondayOfWeek(0);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
@@ -799,7 +792,6 @@ function renderDashboard() {
   const pct = plannedKm > 0 ? Math.min(100, Math.round((actualKm / plannedKm) * 100)) : 0;
   document.getElementById('kpiWeeklyProgressBar').style.width = `${pct}%`;
 
-  // Ritmo medio y FC media de sesiones completadas con distancia > 0
   const completedRuns = appState.workouts.filter(
     (w) => (w.status === 'completed' || w.status === 'modified') && Number(w.actualKm) > 0
   );
@@ -832,7 +824,6 @@ function renderDashboard() {
     }
   }
 
-  // Próximo objetivo
   const sortedGoals = [...appState.goals].sort((a, b) => a.date.localeCompare(b.date));
   const nextGoal = sortedGoals[0];
   if (nextGoal) {
@@ -850,7 +841,6 @@ function renderDashboard() {
       diffDays >= 0 ? `Faltan ${diffDays} días (${formatShortSpanishDate(nextGoal.date)})` : `Evento completado (${formatShortSpanishDate(nextGoal.date)})`;
   }
 
-  // Próxima sesión / Hoy
   const todayISO = getLocalISODate(0);
   const upcoming = [...appState.workouts]
     .filter((w) => w.date >= todayISO && w.status === 'planned')
@@ -888,7 +878,6 @@ function renderDashboard() {
     `;
   }
 
-  // Detector de desviaciones para Gemini
   const modifiedOrHard = appState.workouts.filter(
     (w) =>
       w.status === 'modified' ||
@@ -974,7 +963,6 @@ function renderDashboardCharts() {
     });
   }
 
-  // Segunda gráfica: Ritmo vs FC en sesiones completadas
   const completedRuns = [...appState.workouts]
     .filter(
       (w) =>
@@ -1041,7 +1029,7 @@ function renderDashboardCharts() {
           yPace: {
             type: 'linear',
             position: 'left',
-            reverse: true, // Más rápido arriba
+            reverse: true,
             ticks: {
               color: '#38bdf8',
               font: { size: 10 },
@@ -1410,13 +1398,12 @@ function calculateUserAccumulatedScores() {
 
   completed.forEach((w) => {
     const t = WORKOUT_TYPES_CATALOG[w.type] || WORKOUT_TYPES_CATALOG.easy;
-    const weight = Math.max(Number(w.actualKm) || 4, 3) / 8; // pondera por volumen de la sesión
+    const weight = Math.max(Number(w.actualKm) || 4, 3) / 8;
     Object.keys(totals).forEach((k) => {
       totals[k] += t.scores[k] * weight;
     });
   });
 
-  // Normalizar a escala 1-10 para comparar en el radar
   const maxVal = Math.max(...Object.values(totals), 1);
   const normalized = {};
   Object.keys(totals).forEach((k) => {
@@ -1485,7 +1472,6 @@ function renderPhysiologyTab() {
     `;
   }
 
-  // Barras de estímulo acumulado real del usuario
   const userScores = calculateUserAccumulatedScores();
   const accBars = document.getElementById('accumulatedAdaptationBars');
   if (accBars) {
@@ -1580,9 +1566,9 @@ function renderIntensityPolarizationChart() {
   const ctx = document.getElementById('intensityDistributionChart');
   if (!ctx) return;
 
-  let lowKm = 0; // easy, long
-  let modKm = 0; // tempo, fartlek
-  let highKm = 0; // intervals, hills, race
+  let lowKm = 0;
+  let modKm = 0;
+  let highKm = 0;
 
   appState.workouts
     .filter((w) => w.status === 'completed' || w.status === 'modified' || w.status === 'planned')
@@ -1746,7 +1732,6 @@ function renderGoalsTab() {
     }
   }
 
-  // Predictor de carreras equivalentes según el VDOT actual
   const predGrid = document.getElementById('racePredictionsGrid');
   if (predGrid) {
     const standardRaces = [
@@ -1863,13 +1848,11 @@ function renderProfileTab() {
   document.getElementById('profShoes').value = p.shoes || '';
   document.getElementById('profInjuries').value = p.injuries || '';
 
-  // IMC
   if (p.weight && p.height) {
     const bmi = (Number(p.weight) / Math.pow(Number(p.height) / 100, 2)).toFixed(1);
     document.getElementById('profileBmiBadge').textContent = `IMC: ${bmi}`;
   }
 
-  // Zonas
   const zones = getTrainingZones(p);
   const zContainer = document.getElementById('trainingZonesContainer');
   if (zContainer) {
@@ -2048,10 +2031,10 @@ function copyPromptToClipboard() {
   });
 }
 
-// Conexión Directa con Gemini API desde el navegador
+// Conexión Directa con Gemini API desde el navegador (con fallback automático de modelos)
 async function callGeminiDirectAPI(mode = 'adjust') {
   const apiKey = document.getElementById('geminiApiKeyInput')?.value.trim();
-  const model = document.getElementById('geminiModelSelect')?.value || 'gemini-2.5-flash';
+  const preferredModel = document.getElementById('geminiModelSelect')?.value || 'gemini-3-flash-preview';
   const statusEl = document.getElementById('geminiApiStatusMsg');
 
   if (!apiKey) {
@@ -2064,44 +2047,68 @@ async function callGeminiDirectAPI(mode = 'adjust') {
   const prompt = buildRunnerContextPrompt(mode);
   generateGeminiPrompt(mode);
 
-  statusEl.className = 'text-xs p-3 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 block';
-  statusEl.textContent = `Analizando tu progreso fisiológico con ${model} y ajustando entrenamientos...`;
+  const fallbackChain = [
+    preferredModel,
+    'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview',
+    'gemini-3.1-flash-lite-preview',
+    'gemini-2.5-flash'
+  ].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
-  try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.4,
-          responseMimeType: 'application/json'
+  let lastError = null;
+
+  for (const model of fallbackChain) {
+    statusEl.className = 'text-xs p-3 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 block';
+    statusEl.textContent = `Analizando tu progreso fisiológico con ${model} y ajustando entrenamientos...`;
+
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.4,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        const errMsg = errData?.error?.message || `HTTP ${response.status}`;
+        lastError = new Error(errMsg);
+        if (response.status === 404 || response.status === 400 || response.status === 429 || errMsg.includes('no longer available')) {
+          continue;
         }
-      })
-    });
+        throw lastError;
+      }
 
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData?.error?.message || `HTTP ${response.status}`);
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!rawText) throw new Error('Respuesta vacía de Gemini API.');
+
+      document.getElementById('geminiImportTextarea').value = rawText;
+      const count = applyParsedGeminiPlan(rawText);
+
+      const selectEl = document.getElementById('geminiModelSelect');
+      if (selectEl && selectEl.value !== model) {
+        selectEl.value = model;
+      }
+
+      statusEl.className = 'text-xs p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 block';
+      statusEl.textContent = `¡Éxito (${model})! Gemini reajustó e importó ${count} entrenamientos a tu calendario.`;
+      return;
+    } catch (err) {
+      lastError = err;
     }
-
-    const data = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    if (!rawText) throw new Error('Respuesta vacía de Gemini API.');
-
-    document.getElementById('geminiImportTextarea').value = rawText;
-    const count = applyParsedGeminiPlan(rawText);
-
-    statusEl.className = 'text-xs p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 block';
-    statusEl.textContent = `¡Éxito! Gemini reajustó e importó ${count} entrenamientos a tu calendario.`;
-  } catch (err) {
-    statusEl.className = 'text-xs p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 block';
-    statusEl.textContent = `Error al conectar con Gemini API: ${err.message}`;
   }
+
+  statusEl.className = 'text-xs p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 block';
+  statusEl.textContent = `Error al conectar con Gemini API: ${lastError ? lastError.message : 'Error desconocido'}`;
 }
 
-// Importador inteligente (extrae JSON de respuestas Markdown o texto libre de Gemini)
 function importFromGeminiText() {
   const raw = document.getElementById('geminiImportTextarea')?.value.trim();
   if (!raw) {
@@ -2119,14 +2126,12 @@ function importFromGeminiText() {
 function applyParsedGeminiPlan(rawText) {
   let parsed = null;
 
-  // 1. Intentar extraer bloque ```json ... ``` o { ... }
   const codeBlockMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidateJson = codeBlockMatch ? codeBlockMatch[1].trim() : rawText.trim();
 
   try {
     parsed = JSON.parse(candidateJson);
   } catch (_) {
-    // Buscar primer '{' y último '}'
     const firstBrace = rawText.indexOf('{');
     const lastBrace = rawText.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace > firstBrace) {
@@ -2158,7 +2163,6 @@ function applyParsedGeminiPlan(rawText) {
     const normalizedType = validTypes.includes(w.type) ? w.type : 'easy';
 
     if (replacePlanned) {
-      // Elimina sesiones "planned" en esa misma fecha para reemplazarlas con el ajuste de Gemini (preserva las completadas)
       appState.workouts = appState.workouts.filter(
         (existing) => !(existing.date === w.date && existing.status === 'planned')
       );
