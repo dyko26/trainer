@@ -1,5 +1,5 @@
 // ============================================================================
-// RunPulse AI — Control de Running, Fisiología & Entrenador Adaptativo Gemini
+// RunPulse AI — Control de Running, Fisiología, Escáner de Reloj & Gemini AI
 // ============================================================================
 
 const STORAGE_KEY = 'runpulse_ai_state_v1';
@@ -189,7 +189,6 @@ const WORKOUT_TYPES_CATALOG = {
   }
 };
 
-// Dimensiones fisiológicas para gráficas
 const PHYSIOLOGY_DIMENSIONS = [
   { key: 'aerobicBase', label: 'Base Aeróbica y Capilares' },
   { key: 'lactateThreshold', label: 'Umbral de Lactato' },
@@ -203,6 +202,7 @@ const PHYSIOLOGY_DIMENSIONS = [
 let appState = null;
 let currentWeekOffset = 0;
 let selectedPhysiologyType = 'intervals';
+let currentModalScreenshots = []; // Arreglo temporal de imágenes en base64 para el modal abierto
 
 // Instancias de gráficas Chart.js
 let volumeChartInstance = null;
@@ -404,7 +404,7 @@ function getTrainingZones(profile) {
 }
 
 // ============================================================================
-// DATOS INICIALES POR DEFECTO (DEMO REALISTA CENTRADO EN LA SEMANA ACTUAL)
+// DATOS INICIALES POR DEFECTO
 // ============================================================================
 
 function createDefaultState() {
@@ -472,8 +472,14 @@ function createDefaultState() {
         actualMin: 42.5,
         actualPace: '05:11',
         actualHR: 145,
+        actualMaxHR: 162,
+        actualCadence: 173,
+        actualElevation: 45,
+        actualCalories: 510,
         actualRpe: 4,
-        notes: 'Sensaciones muy fluidas, respiración cómoda.'
+        watchAnalysis: 'Zonas FC: 84% en Z2, 16% en Z3. Parciales muy regulares entre 5:08 y 5:14/km.',
+        notes: 'Sensaciones muy fluidas, respiración cómoda.',
+        screenshots: []
       },
       {
         id: 'w-prev-2',
@@ -489,8 +495,14 @@ function createDefaultState() {
         actualMin: 45.0,
         actualPace: '04:18',
         actualHR: 179,
+        actualMaxHR: 188,
+        actualCadence: 182,
+        actualElevation: 15,
+        actualCalories: 640,
         actualRpe: 8,
-        notes: 'Última serie exigente pero manteniendo cadencia alta.'
+        watchAnalysis: '5x1000m en: 4:16, 4:15, 4:13, 4:14, 4:11. Training Effect Aeróbico 4.1 / Anaeróbico 3.2.',
+        notes: 'Última serie exigente pero manteniendo cadencia alta.',
+        screenshots: []
       },
       {
         id: 'w-prev-3',
@@ -506,8 +518,14 @@ function createDefaultState() {
         actualMin: 37.8,
         actualPace: '05:24',
         actualHR: 139,
+        actualMaxHR: 148,
+        actualCadence: 171,
+        actualElevation: 30,
+        actualCalories: 430,
         actualRpe: 3,
-        notes: 'Piernas recuperadas.'
+        watchAnalysis: '92% del tiempo en Z1-Z2. Recuperación cardíaca óptima.',
+        notes: 'Piernas recuperadas.',
+        screenshots: []
       },
       {
         id: 'w-prev-4',
@@ -523,8 +541,14 @@ function createDefaultState() {
         actualMin: 84.5,
         actualPace: '05:07',
         actualHR: 151,
+        actualMaxHR: 168,
+        actualCadence: 175,
+        actualElevation: 120,
+        actualCalories: 1050,
         actualRpe: 6,
-        notes: 'Últimos 3 km a 4:50 sintiéndome fuerte.'
+        watchAnalysis: 'Bloque inicial 13km a 5:12/km (147 ppm) + cierre 3.5km a 4:48/km (164 ppm). Baja deriva cardíaca.',
+        notes: 'Últimos 3 km a 4:50 sintiéndome fuerte.',
+        screenshots: []
       },
       {
         id: 'w-curr-1',
@@ -541,7 +565,9 @@ function createDefaultState() {
         actualPace: '--:--',
         actualHR: 0,
         actualRpe: 2,
-        notes: 'Rodillo de espuma y estiramientos.'
+        watchAnalysis: '',
+        notes: 'Rodillo de espuma y estiramientos.',
+        screenshots: []
       },
       {
         id: 'w-curr-2',
@@ -557,8 +583,14 @@ function createDefaultState() {
         actualMin: 43.5,
         actualPace: '05:07',
         actualHR: 146,
+        actualMaxHR: 156,
+        actualCadence: 175,
+        actualElevation: 52,
+        actualCalories: 540,
         actualRpe: 5,
-        notes: 'Buen ritmo aeróbico con pulsaciones controladas.'
+        watchAnalysis: 'Cadencia constante 175 spm, 88% en Zona 2 aeróbica.',
+        notes: 'Buen ritmo aeróbico con pulsaciones controladas.',
+        screenshots: []
       },
       {
         id: 'w-curr-3',
@@ -574,8 +606,14 @@ function createDefaultState() {
         actualMin: 36.5,
         actualPace: '04:42',
         actualHR: 171,
+        actualMaxHR: 181,
+        actualCadence: 176,
+        actualElevation: 65,
+        actualCalories: 515,
         actualRpe: 8,
-        notes: 'Recorté 2 km del bloque Tempo porque sentí pesadez muscular y calor.'
+        watchAnalysis: 'Deriva cardíaca alta a partir del km 4 (subió a 179 ppm a 4:40/km por humedad/calor).',
+        notes: 'Recorté 2 km del bloque Tempo porque sentí pesadez muscular y calor.',
+        screenshots: []
       },
       {
         id: 'w-curr-4',
@@ -592,7 +630,9 @@ function createDefaultState() {
         actualPace: '',
         actualHR: 0,
         actualRpe: 5,
-        notes: 'Sentadilla búlgara, elevación de talones excéntrica, planchas.'
+        watchAnalysis: '',
+        notes: 'Sentadilla búlgara, elevación de talones excéntrica, planchas.',
+        screenshots: []
       },
       {
         id: 'w-curr-5',
@@ -609,7 +649,9 @@ function createDefaultState() {
         actualPace: '',
         actualHR: 0,
         actualRpe: 7,
-        notes: 'Mantener regularidad entre la primera y sexta repetición.'
+        watchAnalysis: '',
+        notes: 'Mantener regularidad entre la primera y sexta repetición.',
+        screenshots: []
       },
       {
         id: 'w-curr-6',
@@ -626,7 +668,9 @@ function createDefaultState() {
         actualPace: '',
         actualHR: 0,
         actualRpe: 4,
-        notes: 'Soltar piernas antes de la tirada larga.'
+        watchAnalysis: '',
+        notes: 'Soltar piernas antes de la tirada larga.',
+        screenshots: []
       },
       {
         id: 'w-curr-7',
@@ -643,16 +687,18 @@ function createDefaultState() {
         actualPace: '',
         actualHR: 0,
         actualRpe: 7,
-        notes: 'Probar hidratación y gel en el km 10.'
+        watchAnalysis: '',
+        notes: 'Probar hidratación y gel en el km 10.',
+        screenshots: []
       }
     ],
     coachFeedback: {
       lastUpdated: getLocalISODate(0),
       summary:
-        'Detecto que en la sesión de Tempo del miércoles recortaste 2 km con un RPE de 8/10 y pulsaciones altas por calor. Te sugiero usar el botón de Reajuste con Gemini para suavizar ligeramente las series del viernes o dar más recuperación antes de los 18 km del domingo.',
+        'Detecto que en la sesión de Tempo del miércoles recortaste 2 km con un RPE de 8/10 y pulsaciones altas por calor. Puedes subir los pantallazos de tu reloj en cada sesión para que analice tus parciales y zonas de FC antes de reajustar el plan.',
       recommendations: [
         'Mantener el rodaje del sábado estrictamente en Zona 1-2 (<148 ppm).',
-        'Priorizar hidratación con electrolitos antes de las sesiones de calidad.'
+        'Sube la captura de tus intervalos o tirada larga desde el botón "Subir Captura Reloj" para extraer automáticamente tus splits.'
       ]
     }
   };
@@ -688,6 +734,7 @@ function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
   } catch (e) {
     console.error('Error guardando estado:', e);
+    showToast('Aviso: Almacenamiento local lleno. Exporta un respaldo JSON o elimina capturas antiguas.');
   }
 }
 
@@ -701,7 +748,7 @@ function showToast(message) {
   setTimeout(() => {
     toast.classList.add('hidden');
     toast.classList.remove('flex');
-  }, 3200);
+  }, 3400);
 }
 
 // ============================================================================
@@ -740,6 +787,267 @@ function switchTab(tabId) {
 function openGeminiModal() {
   switchTab('gemini');
   generateGeminiPrompt('adjust');
+}
+
+// ============================================================================
+// COMPRESIÓN Y GESTIÓN DE PANTALLAZOS DEL RELOJ + GEMINI VISION OCR
+// ============================================================================
+
+function compressImageFileToDataURL(file, maxWidth = 1080, quality = 0.78) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleWatchScreenshotsUpload(event) {
+  const files = Array.from(event.target.files || []);
+  if (files.length === 0) return;
+
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) continue;
+    try {
+      const compressedDataUrl = await compressImageFileToDataURL(file);
+      currentModalScreenshots.push({
+        id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        name: file.name || 'Captura Reloj',
+        dataUrl: compressedDataUrl
+      });
+    } catch (err) {
+      console.error('Error comprimiendo imagen:', err);
+    }
+  }
+
+  event.target.value = '';
+  renderModalScreenshotsGallery();
+  showToast(`${files.length} captura(s) cargada(s). Pulsa "Extraer Datos con Gemini IA" para leerlas.`);
+}
+
+// Soporte para pegar pantallazos directamente con Ctrl+V cuando el modal está abierto
+window.addEventListener('paste', async (event) => {
+  const modal = document.getElementById('workoutModal');
+  if (!modal || modal.classList.contains('hidden')) return;
+
+  const items = Array.from(event.clipboardData?.items || []);
+  const imageItems = items.filter((item) => item.type.startsWith('image/'));
+  if (imageItems.length === 0) return;
+
+  for (const item of imageItems) {
+    const file = item.getAsFile();
+    if (!file) continue;
+    const compressedDataUrl = await compressImageFileToDataURL(file);
+    currentModalScreenshots.push({
+      id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      name: `Pegado-${new Date().toLocaleTimeString()}`,
+      dataUrl: compressedDataUrl
+    });
+  }
+  renderModalScreenshotsGallery();
+  showToast('Captura pegada desde el portapapeles. Puedes extraer sus datos con Gemini IA.');
+});
+
+function renderModalScreenshotsGallery() {
+  const gallery = document.getElementById('wmScreenshotsGallery');
+  if (!gallery) return;
+
+  if (currentModalScreenshots.length === 0) {
+    gallery.innerHTML = `
+      <div class="col-span-full py-3 px-4 rounded-xl border border-dashed border-slate-800 text-center text-[11px] text-slate-400">
+        No hay capturas adjuntas en esta sesión. Sube imágenes de la pantalla de tu reloj o de la app (Garmin, Strava, Coros, Apple Fitness, Huawei, Polar) o presiona <strong>Ctrl+V</strong>.
+      </div>
+    `;
+    return;
+  }
+
+  gallery.innerHTML = currentModalScreenshots
+    .map(
+      (img, index) => `
+      <div class="relative group rounded-xl overflow-hidden border border-slate-700 bg-slate-950 h-28 flex items-center justify-center">
+        <img src="${img.dataUrl}" alt="${img.name}" onclick="openImageLightbox('${img.dataUrl}')" class="w-full h-full object-cover cursor-zoom-in group-hover:opacity-90 transition" />
+        <button type="button" onclick="removeModalScreenshot(${index})" class="absolute top-1.5 right-1.5 p-1 rounded-lg bg-slate-950/85 text-rose-400 hover:bg-rose-500 hover:text-white transition" title="Eliminar captura">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+        <span class="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded bg-slate-950/80 text-[10px] text-slate-300">Captura ${index + 1}</span>
+      </div>
+    `
+    )
+    .join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function removeModalScreenshot(index) {
+  currentModalScreenshots.splice(index, 1);
+  renderModalScreenshotsGallery();
+}
+
+function openImageLightbox(dataUrl) {
+  const modal = document.getElementById('imageLightboxModal');
+  const imgEl = document.getElementById('lightboxImageEl');
+  if (!modal || !imgEl) return;
+  imgEl.src = dataUrl;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeImageLightbox() {
+  const modal = document.getElementById('imageLightboxModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function openWorkoutScreenshotGalleryById(workoutId) {
+  const w = appState.workouts.find((item) => item.id === workoutId);
+  if (w && w.screenshots && w.screenshots.length > 0) {
+    openImageLightbox(w.screenshots[0].dataUrl);
+  }
+}
+
+// Analizador Multimodal Gemini Vision: lee las capturas del reloj y autocompleta el entrenamiento
+async function analyzeWatchScreenshotsWithGemini() {
+  const statusEl = document.getElementById('wmVisionStatus');
+  const apiKey =
+    document.getElementById('geminiApiKeyInput')?.value.trim() ||
+    localStorage.getItem(GEMINI_KEY_STORAGE) ||
+    '';
+
+  if (currentModalScreenshots.length === 0) {
+    statusEl.className = 'text-xs p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 block';
+    statusEl.textContent = 'Primero sube o pega (Ctrl+V) al menos una captura de pantalla de tu reloj o aplicación deportiva.';
+    return;
+  }
+
+  if (!apiKey) {
+    statusEl.className = 'text-xs p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 block';
+    statusEl.textContent = 'Para leer automáticamente las imágenes necesitas configurar tu Gemini API Key en la pestaña "Centro Gemini AI". (Las imágenes igual se guardarán en tu sesión si pulsas Guardar).';
+    return;
+  }
+
+  const imageParts = currentModalScreenshots.map((img) => {
+    const base64Data = img.dataUrl.split(',')[1];
+    return {
+      inlineData: {
+        mimeType: 'image/jpeg',
+        data: base64Data
+      }
+    };
+  });
+
+  const visionPrompt = `Analiza estas capturas de pantalla de mi reloj deportivo / app de running (Garmin, Coros, Strava, Apple Fitness, Polar, Huawei Health, Samsung, etc.).
+Extrae con máxima precisión todos los datos visibles del entrenamiento y devuelve EXCLUSIVAMENTE un objeto JSON válido con esta estructura:
+{
+  "titleSuggested": "Nombre descriptivo de la sesión si no tiene uno (ej. Rodaje Aeróbico o Series en Pista)",
+  "workoutTypeSuggested": "easy | tempo | intervals | long | fartlek | hills | strength | race",
+  "dateSuggested": "YYYY-MM-DD si aparece en la captura o vacío",
+  "actualKm": 10.02,
+  "actualMin": 51.4,
+  "actualPace": "05:08",
+  "actualHR": 152,
+  "actualMaxHR": 174,
+  "actualCadence": 176,
+  "actualElevation": 85,
+  "actualCalories": 610,
+  "estimatedRpe": 6,
+  "watchAnalysis": "Resumen claro y estructurado en español de: 1) Parciales/Splits por km o vueltas, 2) Distribución en Zonas de Frecuencia Cardíaca, 3) Training Effect / Carga / Potencia / Cadencia y 4) Qué indica fisiológicamente sobre cómo fue el entrenamiento (ej. si hubo deriva cardíaca, si el ritmo fue constante o progresivo)."
+}`;
+
+  const fallbackModels = [
+    document.getElementById('geminiModelSelect')?.value || 'gemini-3-flash-preview',
+    'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview',
+    'gemini-2.5-flash'
+  ].filter((m, idx, arr) => arr.indexOf(m) === idx);
+
+  let lastError = null;
+
+  for (const model of fallbackModels) {
+    statusEl.className = 'text-xs p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 block';
+    statusEl.textContent = `Escaneando ${currentModalScreenshots.length} captura(s) del reloj con ${model}...`;
+
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: visionPrompt }, ...imageParts]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        const errMsg = errData?.error?.message || `HTTP ${response.status}`;
+        lastError = new Error(errMsg);
+        if (response.status === 404 || response.status === 400 || response.status === 429 || errMsg.includes('no longer available')) {
+          continue;
+        }
+        throw lastError;
+      }
+
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+
+      // Autocompletar campos del modal con lo leído de las capturas
+      if (parsed.actualKm) document.getElementById('wmActualKm').value = parsed.actualKm;
+      if (parsed.actualMin) document.getElementById('wmActualMin').value = parsed.actualMin;
+      if (parsed.actualPace) document.getElementById('wmActualPace').value = parsed.actualPace;
+      if (parsed.actualHR) document.getElementById('wmActualHR').value = parsed.actualHR;
+      if (parsed.actualMaxHR) document.getElementById('wmActualMaxHR').value = parsed.actualMaxHR;
+      if (parsed.actualCadence) document.getElementById('wmActualCadence').value = parsed.actualCadence;
+      if (parsed.actualElevation) document.getElementById('wmActualElevation').value = parsed.actualElevation;
+      if (parsed.actualCalories) document.getElementById('wmActualCalories').value = parsed.actualCalories;
+      if (parsed.estimatedRpe) {
+        document.getElementById('wmActualRpe').value = parsed.estimatedRpe;
+        document.getElementById('wmRpeValueLabel').textContent = parsed.estimatedRpe;
+      }
+      if (parsed.watchAnalysis) {
+        document.getElementById('wmWatchAnalysis').value = parsed.watchAnalysis;
+      }
+      if (!document.getElementById('wmTitle').value && parsed.titleSuggested) {
+        document.getElementById('wmTitle').value = parsed.titleSuggested;
+      }
+      if (parsed.workoutTypeSuggested && WORKOUT_TYPES_CATALOG[parsed.workoutTypeSuggested]) {
+        document.getElementById('wmType').value = parsed.workoutTypeSuggested;
+        updateModalPhysiologyPreview();
+      }
+      document.getElementById('wmStatus').value = 'completed';
+
+      statusEl.className = 'text-xs p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 block';
+      statusEl.textContent = '¡Datos del reloj extraídos con éxito! Revisa los campos autocompletados abajo y pulsa "Guardar Sesión y Capturas".';
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  statusEl.className = 'text-xs p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 block';
+  statusEl.textContent = `No se pudo leer la imagen con la API: ${lastError ? lastError.message : 'Error desconocido'}`;
 }
 
 // ============================================================================
@@ -865,13 +1173,13 @@ function renderDashboard() {
           <p class="text-xs text-slate-300"><strong class="text-emerald-400">¿Qué mejora hoy?:</strong> ${typeInfo.primaryBenefit}</p>
           ${nextWorkout.notes ? `<p class="text-xs text-slate-400 italic">"${nextWorkout.notes}"</p>` : ''}
         </div>
-        <div class="flex sm:flex-col items-end justify-between gap-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800 min-w-[190px]">
+        <div class="flex sm:flex-col items-end justify-between gap-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800 min-w-[205px]">
           <div class="text-right">
             <div class="text-2xl font-display font-bold text-white">${nextWorkout.plannedKm || 0} <span class="text-xs font-normal text-slate-400">km</span></div>
             <div class="text-xs text-sky-400">Ritmo obj: ${nextWorkout.plannedPace || '--:--'} /km</div>
           </div>
           <button onclick="openWorkoutModal('${nextWorkout.id}')" class="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 w-full justify-center">
-            <i data-lucide="check-square" class="w-3.5 h-3.5"></i> Registrar Resultado
+            <i data-lucide="watch" class="w-3.5 h-3.5"></i> Registrar / Subir Reloj
           </button>
         </div>
       </div>
@@ -940,7 +1248,7 @@ function renderDashboardCharts() {
             borderRadius: 6
           },
           {
-            label: 'Km Completados (Real)',
+            label: 'Km Completados (Reloj)',
             data: actualData,
             backgroundColor: 'rgba(16, 185, 129, 0.75)',
             borderColor: '#10b981',
@@ -1108,6 +1416,7 @@ function renderCalendarAndTable() {
                   : dayWorkouts
                       .map((w) => {
                         const t = WORKOUT_TYPES_CATALOG[w.type] || WORKOUT_TYPES_CATALOG.easy;
+                        const hasShots = Array.isArray(w.screenshots) && w.screenshots.length > 0;
                         const statusColor =
                           w.status === 'completed'
                             ? 'border-l-4 border-l-emerald-400'
@@ -1121,15 +1430,18 @@ function renderCalendarAndTable() {
                           <div onclick="openWorkoutModal('${w.id}')" class="p-2.5 rounded-xl bg-slate-950 border border-slate-800/90 ${statusColor} cursor-pointer hover:border-slate-700 transition space-y-1">
                             <div class="flex items-center justify-between gap-1">
                               <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ${t.badgeClass}">${t.shortName}</span>
-                              <span class="text-[10px] text-slate-400">${
-                                w.status === 'completed'
-                                  ? '✅ Hecho'
-                                  : w.status === 'modified'
-                                  ? '⚡ Ajustado'
-                                  : w.status === 'skipped'
-                                  ? '❌ Omitido'
-                                  : '⏳ Plan'
-                              }</span>
+                              <span class="text-[10px] text-slate-400 flex items-center gap-1">
+                                ${hasShots ? `<span class="text-indigo-400" title="${w.screenshots.length} captura(s)">📷${w.screenshots.length}</span>` : ''}
+                                ${
+                                  w.status === 'completed'
+                                    ? '✅'
+                                    : w.status === 'modified'
+                                    ? '⚡'
+                                    : w.status === 'skipped'
+                                    ? '❌'
+                                    : '⏳'
+                                }
+                              </span>
                             </div>
                             <div class="text-xs font-semibold text-white leading-snug line-clamp-2">${w.title}</div>
                             <div class="text-[11px] text-slate-400 flex items-center justify-between pt-1">
@@ -1178,6 +1490,8 @@ function renderWorkoutsTable() {
     .map((w) => {
       const t = WORKOUT_TYPES_CATALOG[w.type] || WORKOUT_TYPES_CATALOG.easy;
       const isDone = w.status === 'completed' || w.status === 'modified';
+      const shots = Array.isArray(w.screenshots) ? w.screenshots : [];
+
       return `
         <tr class="hover:bg-slate-950/60 transition">
           <td class="py-3 px-3 font-medium text-slate-300 whitespace-nowrap">${formatShortSpanishDate(w.date)}</td>
@@ -1186,6 +1500,7 @@ function renderWorkoutsTable() {
               <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${t.badgeClass}">${t.shortName}</span>
               <span class="font-semibold text-white">${w.title}</span>
             </div>
+            ${w.watchAnalysis ? `<div class="text-[11px] text-indigo-300 mt-0.5">⌚ ${w.watchAnalysis}</div>` : ''}
             ${w.notes ? `<div class="text-[11px] text-slate-400 mt-0.5">${w.notes}</div>` : ''}
           </td>
           <td class="py-3 px-3 text-slate-300 whitespace-nowrap">
@@ -1203,16 +1518,24 @@ function renderWorkoutsTable() {
           <td class="py-3 px-3 whitespace-nowrap">
             ${
               isDone
-                ? `<span class="text-slate-200">${w.actualHR ? w.actualHR + ' ppm' : '--'}</span> · <span class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300">RPE ${w.actualRpe || '-'}/10</span>`
+                ? `<span class="text-slate-200">${w.actualHR ? w.actualHR + ' ppm' : '--'}</span>
+                   ${w.actualCadence ? `<span class="text-slate-400 text-[11px]">(${w.actualCadence} spm)</span>` : ''}
+                   · <span class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300">RPE ${w.actualRpe || '-'}/10</span>`
                 : '--'
             }
           </td>
-          <td class="py-3 px-3 text-slate-400 max-w-xs truncate" title="${t.primaryBenefit}">
-            ${t.primaryBenefit}
+          <td class="py-3 px-3 whitespace-nowrap">
+            ${
+              shots.length > 0
+                ? `<button onclick="openWorkoutScreenshotGalleryById('${w.id}')" class="px-2 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[11px] font-medium hover:bg-indigo-500/25">
+                    📷 Ver (${shots.length})
+                  </button>`
+                : `<span class="text-slate-600 text-[11px]">Sin captura</span>`
+            }
           </td>
           <td class="py-3 px-3 text-right whitespace-nowrap">
             <button onclick="openWorkoutModal('${w.id}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 font-medium transition">
-              ${isDone ? 'Editar' : 'Registrar'}
+              ${isDone ? 'Editar / Reloj' : 'Registrar / Reloj'}
             </button>
           </td>
         </tr>
@@ -1222,13 +1545,15 @@ function renderWorkoutsTable() {
 }
 
 // ============================================================================
-// MODAL DE ENTRENAMIENTO (CREAR / EDITAR / REGISTRAR RESULTADO REAL)
+// MODAL DE ENTRENAMIENTO (CREAR / EDITAR / SUBIR PANTALLAZOS DEL RELOJ)
 // ============================================================================
 
 function openWorkoutModal(workoutId = null, defaultDate = null) {
   const modal = document.getElementById('workoutModal');
   const deleteBtn = document.getElementById('wmDeleteBtn');
+  const visionStatus = document.getElementById('wmVisionStatus');
   if (!modal) return;
+  if (visionStatus) visionStatus.className = 'hidden';
 
   if (workoutId) {
     const w = appState.workouts.find((item) => item.id === workoutId);
@@ -1246,9 +1571,15 @@ function openWorkoutModal(workoutId = null, defaultDate = null) {
     document.getElementById('wmActualMin').value = w.actualMin || '';
     document.getElementById('wmActualPace').value = w.actualPace || '';
     document.getElementById('wmActualHR').value = w.actualHR || '';
+    document.getElementById('wmActualMaxHR').value = w.actualMaxHR || '';
+    document.getElementById('wmActualCadence').value = w.actualCadence || '';
+    document.getElementById('wmActualElevation').value = w.actualElevation || '';
+    document.getElementById('wmActualCalories').value = w.actualCalories || '';
     document.getElementById('wmActualRpe').value = w.actualRpe || 6;
     document.getElementById('wmRpeValueLabel').textContent = w.actualRpe || 6;
+    document.getElementById('wmWatchAnalysis').value = w.watchAnalysis || '';
     document.getElementById('wmNotes').value = w.notes || '';
+    currentModalScreenshots = Array.isArray(w.screenshots) ? [...w.screenshots] : [];
     deleteBtn.classList.remove('hidden');
   } else {
     document.getElementById('wmId').value = '';
@@ -1264,12 +1595,19 @@ function openWorkoutModal(workoutId = null, defaultDate = null) {
     document.getElementById('wmActualMin').value = '';
     document.getElementById('wmActualPace').value = '';
     document.getElementById('wmActualHR').value = '';
+    document.getElementById('wmActualMaxHR').value = '';
+    document.getElementById('wmActualCadence').value = '';
+    document.getElementById('wmActualElevation').value = '';
+    document.getElementById('wmActualCalories').value = '';
     document.getElementById('wmActualRpe').value = 5;
     document.getElementById('wmRpeValueLabel').textContent = 5;
+    document.getElementById('wmWatchAnalysis').value = '';
     document.getElementById('wmNotes').value = '';
+    currentModalScreenshots = [];
     deleteBtn.classList.add('hidden');
   }
 
+  renderModalScreenshotsGallery();
   updateModalPhysiologyPreview();
   modal.classList.remove('hidden');
   modal.classList.add('flex');
@@ -1321,7 +1659,7 @@ function saveWorkoutFromModal() {
   const id = document.getElementById('wmId').value || `w-${Date.now()}`;
   const actualKmVal = Number(document.getElementById('wmActualKm').value) || 0;
   let statusVal = document.getElementById('wmStatus').value;
-  if (actualKmVal > 0 && statusVal === 'planned') {
+  if ((actualKmVal > 0 || currentModalScreenshots.length > 0) && statusVal === 'planned') {
     statusVal = 'completed';
   }
 
@@ -1339,8 +1677,14 @@ function saveWorkoutFromModal() {
     actualMin: Number(document.getElementById('wmActualMin').value) || 0,
     actualPace: document.getElementById('wmActualPace').value.trim(),
     actualHR: Number(document.getElementById('wmActualHR').value) || 0,
+    actualMaxHR: Number(document.getElementById('wmActualMaxHR').value) || 0,
+    actualCadence: Number(document.getElementById('wmActualCadence').value) || 0,
+    actualElevation: Number(document.getElementById('wmActualElevation').value) || 0,
+    actualCalories: Number(document.getElementById('wmActualCalories').value) || 0,
     actualRpe: Number(document.getElementById('wmActualRpe').value) || 5,
-    notes: document.getElementById('wmNotes').value.trim()
+    watchAnalysis: document.getElementById('wmWatchAnalysis').value.trim(),
+    notes: document.getElementById('wmNotes').value.trim(),
+    screenshots: [...currentModalScreenshots]
   };
 
   const existingIdx = appState.workouts.findIndex((w) => w.id === id);
@@ -1354,7 +1698,7 @@ function saveWorkoutFromModal() {
   closeWorkoutModal();
   renderDashboard();
   renderCalendarAndTable();
-  showToast('Entrenamiento guardado y métricas actualizadas');
+  showToast('Sesión y capturas del reloj guardadas correctamente');
 }
 
 function deleteWorkoutFromModal() {
@@ -1957,8 +2301,8 @@ function buildRunnerContextPrompt(mode = 'adjust') {
 
   const actionInstruction =
     mode === 'new_week'
-      ? `Diseña la planificación completa de 7 días para la semana que inicia el ${targetStartISO} (Lunes a Domingo), ajustando las cargas según cómo respondí en mis entrenamientos recientes.`
-      : `Analiza mis sesiones recientes completadas/modificadas vs las planeadas (prestando especial atención al RPE, pulsaciones y notas) y REAJUSTA mis entrenamientos pendientes a partir de hoy (${targetStartISO}) para optimizar mis adaptaciones y evitar sobreentrenamiento.`;
+      ? `Diseña la planificación completa de 7 días para la semana que inicia el ${targetStartISO} (Lunes a Domingo), ajustando las cargas según cómo respondí en mis entrenamientos recientes y los datos de mi reloj.`
+      : `Analiza mis sesiones recientes completadas/modificadas vs las planeadas (incluyendo la telemetría extraída de las capturas de mi reloj, RPE, pulsaciones y notas) y REAJUSTA mis entrenamientos pendientes a partir de hoy (${targetStartISO}) para optimizar mis adaptaciones y evitar sobreentrenamiento.`;
 
   return `Actúa como mi Entrenador Fisiológico de Running de Élite. Aquí está mi estado actual exportado desde mi app RunPulse AI:
 
@@ -1976,15 +2320,15 @@ ${zones.map((z) => `- ${z.zone} (${z.name}): ${z.hrRange} | Ritmo: ${z.paceRange
 === 3. OBJETIVOS DE CARRERA ===
 ${appState.goals.map((g) => `- [Prioridad ${g.priority}] ${g.name}: ${g.distanceKm} km el ${g.date} -> Tiempo Meta: ${g.targetTime} (${g.notes})`).join('\n')}
 
-=== 4. BITÁCORA RECIENTE (PLANEADO VS REALIZADO) ===
+=== 4. BITÁCORA RECIENTE Y TELEMETRÍA DEL RELOJ (PLANEADO VS REALIZADO) ===
 ${recentWorkouts
   .map(
     (w) =>
       `- [${w.date}] (${w.type.toUpperCase()}) "${w.title}" | Estado: ${w.status.toUpperCase()} | Planeado: ${w.plannedKm}km a ${w.plannedPace}/km | Realizado: ${
         w.status === 'completed' || w.status === 'modified'
-          ? `${w.actualKm}km en ${w.actualMin}min (${w.actualPace}/km), FC Media: ${w.actualHR}ppm, RPE: ${w.actualRpe}/10`
+          ? `${w.actualKm}km en ${w.actualMin}min (${w.actualPace}/km), FC Media: ${w.actualHR}ppm (Máx: ${w.actualMaxHR || '-'}ppm), Cadencia: ${w.actualCadence || '-'}spm, Desnivel: +${w.actualElevation || 0}m, RPE: ${w.actualRpe}/10`
           : 'Pendiente'
-      } | Notas: ${w.notes || '-'}`
+      }${w.watchAnalysis ? ` | Telemetría/Splits del Reloj: ${w.watchAnalysis}` : ''} | Notas: ${w.notes || '-'}`
   )
   .join('\n')}
 
@@ -1996,7 +2340,7 @@ IMPORTANTE: Devuelve tu respuesta incluyendo un bloque JSON válido con exactame
 
 \`\`\`json
 {
-  "coachSummary": "Explicación fisiológica breve de cómo me viste esta semana y por qué hiciste estos ajustes...",
+  "coachSummary": "Explicación fisiológica breve de cómo me viste según los datos de mi reloj y por qué hiciste estos ajustes...",
   "recommendations": [
     "Consejo clave 1",
     "Consejo clave 2"
@@ -2059,7 +2403,7 @@ async function callGeminiDirectAPI(mode = 'adjust') {
 
   for (const model of fallbackChain) {
     statusEl.className = 'text-xs p-3 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 block';
-    statusEl.textContent = `Analizando tu progreso fisiológico con ${model} y ajustando entrenamientos...`;
+    statusEl.textContent = `Analizando tu progreso fisiológico y telemetría del reloj con ${model}...`;
 
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -2182,8 +2526,14 @@ function applyParsedGeminiPlan(rawText) {
       actualMin: 0,
       actualPace: '',
       actualHR: 0,
+      actualMaxHR: 0,
+      actualCadence: 0,
+      actualElevation: 0,
+      actualCalories: 0,
       actualRpe: 5,
-      notes: w.notes || ''
+      watchAnalysis: '',
+      notes: w.notes || '',
+      screenshots: []
     });
     importedCount++;
   });
