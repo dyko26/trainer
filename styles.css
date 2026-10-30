@@ -1,0 +1,54 @@
+/* Custom Scrollbar & Tab styling for RunPulse AI */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.nav-tab {
+  color: #94a3b8;
+  border-color: transparent;
+}
+.nav-tab:hover {
+  color: #e2e8f0;
+  border-color: #334155;
+}
+.nav-tab.active {
+  color: #34d399;
+  border-color: #10b981;
+  background: linear-gradient(to top, rgba(16, 185, 129, 0.08), transparent);
+}
+
+/* Smooth fade-in for tabs */
+.tab-panel {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom subtle scrollbars for tables and textareas */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

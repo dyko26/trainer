@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RunPulse AI — Control de Running & Entrenador Gemini</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            },
+            accent: {
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-slate-950">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-sky-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <i data-lucide="activity" class="w-6 h-6 text-slate-950 stroke-[2.5]"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-display font-bold text-lg tracking-tight text-white">RunPulse <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-400">Gemini Coach</span></h1>
+            <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Pro Running Lab</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Planificación adaptativa, fisiología del entrenamiento y sincronización con Gemini AI</p>
+        </div>
+      </div>
+
+      <!-- Quick Stats Pill & Backup Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div id="headerVdotBadge" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+          <span class="text-slate-400">VDOT Est.:</span>
+          <span id="headerVdotValue" class="font-display font-bold text-emerald-400 text-sm">--</span>
+          <span class="text-slate-600">|</span>
+          <span class="text-slate-400">Racha Semanal:</span>
+          <span id="headerComplianceValue" class="font-display font-bold text-sky-400 text-sm">0%</span>
+        </div>
+
+        <button onclick="openGeminiModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-sky-500 hover:from-indigo-400 hover:to-sky-400 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-500/20 transition all">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Sincronizar Gemini</span>
+        </button>
+
+        <div class="relative group">
+          <button class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 transition" title="Respaldo de Datos (Exportar / Importar)">
+            <i data-lucide="database" class="w-4 h-4"></i>
+          </button>
+          <div class="absolute right-0 mt-2 w-56 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl py-2 hidden group-hover:block z-50">
+            <div class="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">Respaldo Local JSON</div>
+            <button onclick="exportAllData()" class="w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+              Descargar respaldo completo (.json)
+            </button>
+            <label class="w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
+              <i data-lucide="upload" class="w-3.5 h-3.5 text-sky-400"></i>
+              Restaurar respaldo (.json)
+              <input type="file" id="importBackupInput" accept=".json" class="hidden" onchange="importAllData(event)" />
+            </label>
+            <button onclick="loadDemoDataConfirm()" class="w-full px-3 py-2 text-left text-xs text-amber-300 hover:bg-slate-800 flex items-center gap-2 border-t border-slate-800 mt-1 pt-2">
+              <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+              Cargar datos de ejemplo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto no-scrollbar border-t border-slate-900/80">
+      <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="nav-tab active flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+        <span>Dashboard & Progreso</span>
+      </button>
+      <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="nav-tab flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition">
+        <i data-lucide="calendar-days" class="w-4 h-4"></i>
+        <span>Calendario y Entrenamientos</span>
+      </button>
+      <button onclick="switchTab('physiology')" id="tabBtn-physiology" class="nav-tab flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition">
+        <i data-lucide="radar" class="w-4 h-4"></i>
+        <span>¿Qué Mejora Cada Entrenamiento?</span>
+      </button>
+      <button onclick="switchTab('goals')" id="tabBtn-goals" class="nav-tab flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition">
+        <i data-lucide="target" class="w-4 h-4"></i>
+        <span>Objetivos & Retos</span>
+      </button>
+      <button onclick="switchTab('profile')" id="tabBtn-profile" class="nav-tab flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition">
+        <i data-lucide="user-check" class="w-4 h-4"></i>
+        <span>Perfil Fisiológico & Zonas</span>
+      </button>
+      <button onclick="switchTab('gemini')" id="tabBtn-gemini" class="nav-tab flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition">
+        <i data-lucide="bot" class="w-4 h-4 text-purple-400"></i>
+        <span>Centro Gemini AI (Ajuste Dinámico)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- ==================== TAB 1: DASHBOARD & PROGRESO ==================== -->
+    <section id="tab-dashboard" class="tab-panel space-y-6">
+      <!-- Top Summary KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/90 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Volumen Semanal</span>
+            <span class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><i data-lucide="footprints" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span id="kpiWeeklyKm" class="text-2xl sm:text-3xl font-display font-bold text-white">0.0</span>
+            <span class="text-xs text-slate-400">/ <span id="kpiPlannedWeeklyKm">0.0</span> km planeados</span>
+          </div>
+          <div class="mt-3 w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div id="kpiWeeklyProgressBar" class="bg-emerald-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/90 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Ritmo Medio (30 días)</span>
+            <span class="p-2 rounded-lg bg-sky-500/10 text-sky-400"><i data-lucide="gauge" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span id="kpiAvgPace" class="text-2xl sm:text-3xl font-display font-bold text-white">--:--</span>
+            <span class="text-xs text-slate-400">min/km</span>
+          </div>
+          <p id="kpiAvgHrText" class="mt-2 text-xs text-slate-400">FC Media: <span class="text-slate-200 font-medium">-- ppm</span></p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/90 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Próximo Objetivo Principal</span>
+            <span class="p-2 rounded-lg bg-amber-500/10 text-amber-400"><i data-lucide="trophy" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-2">
+            <div id="kpiNextGoalTitle" class="text-base font-bold text-white truncate">Sin objetivo activo</div>
+            <div id="kpiNextGoalMeta" class="text-xs text-amber-400 font-medium mt-0.5">Configura tu carrera meta</div>
+          </div>
+          <div id="kpiNextGoalCountdown" class="mt-2 text-xs text-slate-400">Faltan -- días</div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/90 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Estado & Carga (RPE)</span>
+            <span class="p-2 rounded-lg bg-purple-500/10 text-purple-400"><i data-lucide="heart-pulse" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span id="kpiReadinessState" class="text-lg font-display font-bold text-emerald-400">Óptimo</span>
+            <span id="kpiAvgRpe" class="text-xs text-slate-400">(RPE prom: --/10)</span>
+          </div>
+          <p id="kpiGeminiAdviceMini" class="mt-2 text-xs text-slate-400 truncate">Listo para ajustar con Gemini</p>
+        </div>
+      </div>
+
+      <!-- Today's / Next Scheduled Workout Banner + Gemini Quick Adjustment -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/30 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">PRÓXIMA SESIÓN / HOY</span>
+                <span id="nextWorkoutDateLabel" class="text-xs text-slate-400"></span>
+              </div>
+              <button onclick="openWorkoutModal()" class="text-xs font-medium text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Agregar entrenamiento
+              </button>
+            </div>
+            <div id="nextWorkoutCardContent">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Gemini Coach Quick Card -->
+        <div class="p-6 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-purple-950/40 border border-indigo-500/30 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-indigo-300">
+                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i> Entrenador Adaptativo Gemini
+              </span>
+              <span id="geminiSyncStatusBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">Activo</span>
+            </div>
+            <h3 class="text-base font-bold text-white">¿Completaste o cambiaste entrenamientos esta semana?</h3>
+            <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+              Cada vez que registras tus kilómetros reales, ritmo, pulsaciones y sensación de fatiga (RPE), Gemini analiza las desviaciones y reajusta las cargas de los próximos días.
+            </p>
+            <div id="discrepancyAlertBox" class="mt-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs text-slate-300">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="mt-4 flex flex-col sm:flex-row gap-2">
+            <button onclick="switchTab('gemini'); generateGeminiPrompt('adjust')" class="flex-1 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/25 transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              Reajustar Plan según Progreso
+            </button>
+            <button onclick="switchTab('gemini'); generateGeminiPrompt('new_week')" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+              Nueva Semana
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display font-bold text-sm sm:text-base text-white">Distancia Planeada vs Completada</h3>
+              <p class="text-xs text-slate-400">Comparativa por sesión y evolución de adherencia (km)</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">Últimas sesiones</span>
+          </div>
+          <div class="h-64">
+            <canvas id="volumeComparisonChart"></canvas>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display font-bold text-sm sm:text-base text-white">Evolución de Ritmo y Frecuencia Cardíaca</h3>
+              <p class="text-xs text-slate-400">Relación eficiencia aeróbica: Ritmo (min/km) vs Pulsaciones (ppm)</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">Progreso Aeróbico</span>
+          </div>
+          <div class="h-64">
+            <canvas id="paceHrTrendChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: CALENDARIO Y ENTRENAMIENTOS ==================== -->
+    <section id="tab-calendar" class="tab-panel hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-5 rounded-2xl border border-slate-800">
+        <div>
+          <h2 class="font-display font-bold text-lg text-white">Organizador de Entrenamientos por Día</h2>
+          <p class="text-xs text-slate-400">Planifica tu semana, registra tus tiempos reales y observa cómo responde tu cuerpo.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="changeWeekOffset(-1)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i> Semana Ant.
+          </button>
+          <button onclick="changeWeekOffset(0)" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold text-xs">
+            Semana Actual
+          </button>
+          <button onclick="changeWeekOffset(1)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1">
+            Semana Sig. <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+          <button onclick="openWorkoutModal()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Entrenamiento
+          </button>
+        </div>
+      </div>
+
+      <!-- Current Week Header Info -->
+      <div class="flex items-center justify-between px-1">
+        <h3 id="calendarWeekRangeLabel" class="font-display font-bold text-base text-slate-200">Semana</h3>
+        <div class="flex items-center gap-4 text-xs text-slate-400">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Completado</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Planeado</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Modificado / Parcial</span>
+        </div>
+      </div>
+
+      <!-- 7-Day Weekly Grid -->
+      <div id="weeklyCalendarGrid" class="grid grid-cols-1 md:grid-cols-7 gap-3">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Full Workout History & Filterable Table -->
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-display font-bold text-base text-white">Bitácora Completa de Sesiones</h3>
+            <p class="text-xs text-slate-400">Haz clic en "Registrar Resultado" para anotar kilómetros reales, tiempo, pulsaciones y sensaciones.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="filterWorkoutType" onchange="renderWorkoutsTable()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200">
+              <option value="all">Todos los tipos</option>
+              <option value="easy">Rodaje Suave / Recuperación</option>
+              <option value="tempo">Tempo / Umbral de Lactato</option>
+              <option value="intervals">Series / Intervalos VO2max</option>
+              <option value="long">Tirada Larga / Fondo</option>
+              <option value="fartlek">Fartlek / Cambios de Ritmo</option>
+              <option value="hills">Cuestas / Fuerza Específica</option>
+              <option value="strength">Fuerza / Core / Cruzado</option>
+              <option value="race">Competición / Test</option>
+            </select>
+            <select id="filterWorkoutStatus" onchange="renderWorkoutsTable()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200">
+              <option value="all">Todos los estados</option>
+              <option value="planned">Planeados</option>
+              <option value="completed">Completados</option>
+              <option value="skipped">Omitidos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
+                <th class="py-3 px-3">Fecha</th>
+                <th class="py-3 px-3">Tipo & Sesión</th>
+                <th class="py-3 px-3">Planeado</th>
+                <th class="py-3 px-3">Realizado</th>
+                <th class="py-3 px-3">FC / RPE</th>
+                <th class="py-3 px-3">Impacto Principal</th>
+                <th class="py-3 px-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="workoutsTableBody" class="divide-y divide-slate-800/60 text-xs">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: FISIOLOGÍA Y QUÉ MEJORA CADA ENTRENAMIENTO ==================== -->
+    <section id="tab-physiology" class="tab-panel hidden space-y-6">
+      <div class="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800">
+        <h2 class="font-display font-bold text-xl text-white">Mapa Visual de Adaptaciones Fisiológicas del Running</h2>
+        <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl">
+          Comprende exactamente <span class="text-emerald-400 font-semibold">qué sistema fisiológico mejora cada tipo de entrenamiento</span> y visualiza qué capacidades has desarrollado más según tus entrenamientos completados.
+        </p>
+      </div>
+
+      <!-- Interactive Comparison & Runner's Accumulated Radar -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left selector + physiological explanation -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Selecciona un Tipo de Entrenamiento para Analizar:</label>
+            <div id="workoutTypeSelectorButtons" class="grid grid-cols-2 gap-2">
+              <!-- Populated by JS -->
+            </div>
+
+            <div id="selectedTypeDetailCard" class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Accumulated Adaptation Bars from actual completed workouts -->
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-display font-bold text-sm text-white">Tu Estímulo Acumulado Real</h3>
+              <span class="text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Basado en tus sesiones completadas</span>
+            </div>
+            <p class="text-xs text-slate-400">Puntaje fisiológico acumulado según el volumen e intensidad de los entrenamientos que ya has completado:</p>
+            <div id="accumulatedAdaptationBars" class="space-y-2.5 pt-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Radar Chart & Comparative Matrix -->
+        <div class="lg:col-span-7 space-y-6">
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 class="font-display font-bold text-base text-white">Gráfica Radar de Beneficios por Tipo de Entrenamiento</h3>
+                <p class="text-xs text-slate-400">Compara el tipo seleccionado contra tu perfil acumulado o contra otro entrenamiento</p>
+              </div>
+              <select id="compareWorkoutTypeSelect" onchange="updatePhysiologyRadar()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200">
+                <option value="user_accumulated">Comparar con: Tu Progreso Acumulado</option>
+                <option value="easy">Comparar con: Rodaje Suave</option>
+                <option value="tempo">Comparar con: Tempo / Umbral</option>
+                <option value="intervals">Comparar con: Series VO2max</option>
+                <option value="long">Comparar con: Tirada Larga</option>
+                <option value="fartlek">Comparar con: Fartlek</option>
+                <option value="hills">Comparar con: Cuestas</option>
+              </select>
+            </div>
+            <div class="h-80 sm:h-96 flex items-center justify-center">
+              <canvas id="physiologyRadarChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Distribution of Training Polarization (80/20 Rule) -->
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-display font-bold text-sm text-white">Balance de Intensidades (Regla Polarizada 80/20)</h3>
+                <p class="text-xs text-slate-400">Distribución de tus kilómetros entre Baja Intensidad (Z1-Z2) vs Moderada/Alta (Z3-Z5)</p>
+              </div>
+              <span id="polarizationBadge" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400">Calculando...</span>
+            </div>
+            <div class="h-48">
+              <canvas id="intensityDistributionChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complete Reference Matrix of All Workout Types -->
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+        <h3 class="font-display font-bold text-base text-white">Tabla Científica de Impacto por Sistema (Escala 1 a 10)</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
+                <th class="py-3 px-3">Tipo de Entrenamiento</th>
+                <th class="py-3 px-3">Zona Ideal</th>
+                <th class="py-3 px-3">Base Aeróbica & Capilares</th>
+                <th class="py-3 px-3">Umbral de Lactato</th>
+                <th class="py-3 px-3">VO2 Máx (Potencia)</th>
+                <th class="py-3 px-3">Economía de Carrera</th>
+                <th class="py-3 px-3">Fuerza Muscular</th>
+                <th class="py-3 px-3">Resistencia Mental / Glucógeno</th>
+              </tr>
+            </thead>
+            <tbody id="physiologyMatrixTableBody" class="divide-y divide-slate-800/60">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: OBJETIVOS & RETOS ==================== -->
+    <section id="tab-goals" class="tab-panel hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-5 rounded-2xl border border-slate-800">
+        <div>
+          <h2 class="font-display font-bold text-lg text-white">Mis Objetivos de Carrera, Distancias y Tiempos Meta</h2>
+          <p class="text-xs text-slate-400">Fija tus carreras o retos personales. Gemini utilizará estos objetivos para periodizar tus semanas (Base, Específico, Tapering).</p>
+        </div>
+        <button onclick="openGoalModal()" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 self-start sm:self-auto">
+          <i data-lucide="flag" class="w-4 h-4"></i> Nuevo Objetivo
+        </button>
+      </div>
+
+      <!-- Goals Grid -->
+      <div id="goalsGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Race Time Predictor based on current VDOT -->
+      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="font-display font-bold text-base text-white">Predicción de Tiempos Equivalentes (Fórmula Jack Daniels VDOT)</h3>
+            <p class="text-xs text-slate-400">Tiempos estimados actuales según tus mejores marcas registradas en tu perfil fisiológico vs tus objetivos.</p>
+          </div>
+          <span class="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+            VDOT Actual: <span id="predictorVdotSpan">--</span>
+          </span>
+        </div>
+        <div id="racePredictionsGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: PERFIL FISIOLÓGICO & ZONAS ==================== -->
+    <section id="tab-profile" class="tab-panel hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Runner Profile Form -->
+        <div class="lg:col-span-7 p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-5">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <h2 class="font-display font-bold text-lg text-white">Datos Personales y Métricas de Running</h2>
+              <p class="text-xs text-slate-400">Toda la información esencial para calcular zonas exactas y alimentar a Gemini.</p>
+            </div>
+            <button onclick="saveProfileForm()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
+              <i data-lucide="save" class="w-4 h-4"></i> Guardar Perfil
+            </button>
+          </div>
+
+          <form id="runnerProfileForm" onsubmit="event.preventDefault(); saveProfileForm();" class="space-y-5">
+            <!-- Biometrics -->
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-3">1. Biometría y Antropometría</h3>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Nombre / Alias</label>
+                  <input type="text" id="profName" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Carlos" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Edad (años)</label>
+                  <input type="number" id="profAge" min="10" max="100" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Peso (kg)</label>
+                  <input type="number" step="0.1" id="profWeight" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Estatura (cm)</label>
+                  <input type="number" id="profHeight" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Cardiovascular & Running Physiology -->
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-sky-400 mb-3">2. Fisiología Cardiovascular & Biomecánica</h3>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">FC Reposo (ppm)</label>
+                  <input type="number" id="profRestHR" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. 52" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">FC Máxima (ppm)</label>
+                  <input type="number" id="profMaxHR" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. 190" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">FC Umbral Lactato</label>
+                  <input type="number" id="profLTHR" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. 171" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">VO2max Reloj (opc.)</label>
+                  <input type="number" step="0.1" id="profVo2max" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. 51" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Cadencia Media (ppm)</label>
+                  <input type="number" id="profCadence" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. 174" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Nivel Experiencia</label>
+                  <select id="profExperience" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                    <option value="principiante">Principiante (&lt; 1 año)</option>
+                    <option value="intermedio">Intermedio (1-3 años)</option>
+                    <option value="avanzado">Avanzado (&gt; 3 años)</option>
+                    <option value="competitivo">Competitivo / Maratonista</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Días disponibles / sem</label>
+                  <input type="number" min="1" max="7" id="profDaysAvailable" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="5" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Día preferido Tirada Larga</label>
+                  <select id="profLongRunDay" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                    <option value="Domingo">Domingo</option>
+                    <option value="Sábado">Sábado</option>
+                    <option value="Viernes">Viernes</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Personal Records (PRs) for VDOT & Pace Zones -->
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-3">3. Mejores Marcas Recientes (Para Cálculo Automático de Ritmos)</h3>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Marca 5K (mm:ss)</label>
+                  <input type="text" id="profPr5k" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="22:30" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Marca 10K (mm:ss)</label>
+                  <input type="text" id="profPr10k" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="46:45" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Media Maratón (hh:mm:ss)</label>
+                  <input type="text" id="profPr21k" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="01:44:00" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Maratón 42K (hh:mm:ss)</label>
+                  <input type="text" id="profPr42k" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="03:45:00" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Terrain, Shoes & Injury History -->
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-3">4. Contexto Biomecánico, Lesiones y Equipamiento</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Superficie Habitual y Altitud</label>
+                  <input type="text" id="profTerrain" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Asfalto y pista, 1500m snm" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Rotación de Zapatillas Actual</label>
+                  <input type="text" id="profShoes" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Pegasus 40 (diario), Vaporfly (series)" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-xs text-slate-400 mb-1">Historial de Molestias / Lesiones o Restricciones (Gemini lo tomará en cuenta)</label>
+                  <textarea id="profInjuries" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Ligera sobrecarga en sóleo derecho si hago más de 2 días seguidos de velocidad."></textarea>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Calculated Heart Rate (Karvonen) & Pace Zones (Daniels) -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-display font-bold text-base text-white">Zonas de Frecuencia Cardíaca y Ritmo</h3>
+                <p class="text-xs text-slate-400">Calculadas con Reserva Cardíaca (Karvonen) y VDOT</p>
+              </div>
+              <span id="profileBmiBadge" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">IMC: --</span>
+            </div>
+
+            <div id="trainingZonesContainer" class="space-y-2.5">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 6: CENTRO GEMINI AI (AJUSTE DINÁMICO) ==================== -->
+    <section id="tab-gemini" class="tab-panel hidden space-y-6">
+      <div class="p-6 rounded-2xl bg-gradient-to-r from-indigo-950/70 via-slate-900 to-purple-950/60 border border-indigo-500/30">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-1">
+              <i data-lucide="sparkles" class="w-4 h-4"></i> Sincronización Bidireccional con Gemini AI
+            </span>
+            <h2 class="font-display font-bold text-xl text-white">Puente Inteligente de Entrenamiento Adaptativo</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl">
+              Usa tu <strong>API Key de Gemini</strong> para reajustar tus entrenamientos con 1 clic directamente desde la app, o utiliza el <strong>Modo Copiar / Pegar</strong> para llevar tu reporte de progreso al chat de Gemini y pegar aquí la respuesta para actualizar tu calendario automáticamente.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left Column: Step 1 - Generate Context Prompt or Run Direct API -->
+        <div class="lg:col-span-6 space-y-5">
+          <!-- Direct API Configuration Card -->
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="key-round" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="font-display font-bold text-sm text-white">Opción A: Conexión Directa con Gemini API</h3>
+              </div>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-[11px] text-indigo-400 hover:underline flex items-center gap-1">
+                Obtener API Key gratis <i data-lucide="external-link" class="w-3 h-3"></i>
+              </a>
+            </div>
+
+            <div class="flex gap-2">
+              <input type="password" id="geminiApiKeyInput" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Pega tu Gemini API Key (AIzaSy...)" onchange="saveGeminiApiKey()" />
+              <select id="geminiModelSelect" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200">
+                <option value="gemini-2.5-flash">gemini-2.5-flash (Rápido)</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro (Avanzado)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Instrucción o comentario adicional para Gemini hoy (opcional):</label>
+              <input type="text" id="geminiCustomNote" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Esta semana tengo poco tiempo el jueves, o sentí pesadez en las piernas ayer..." />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button onclick="callGeminiDirectAPI('adjust')" id="btnDirectAdjust" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition">
+                <i data-lucide="wand-2" class="w-4 h-4"></i>
+                <span>Auto-Ajustar Plan con API</span>
+              </button>
+              <button onclick="callGeminiDirectAPI('new_week')" id="btnDirectNewWeek" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition">
+                <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i>
+                <span>Generar Próxima Semana con API</span>
+              </button>
+            </div>
+            <div id="geminiApiStatusMsg" class="hidden text-xs p-3 rounded-xl"></div>
+          </div>
+
+          <!-- Option B: Prompt Generator for Copy/Paste into Gemini Chat -->
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="copy" class="w-4 h-4 text-emerald-400"></i>
+                <h3 class="font-display font-bold text-sm text-white">Opción B: Generar Prompt con tu Progreso para Gemini Chat</h3>
+              </div>
+              <div class="flex gap-1.5">
+                <button onclick="generateGeminiPrompt('adjust')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-200">Prompt de Reajuste</button>
+                <button onclick="generateGeminiPrompt('new_week')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-200">Prompt Nueva Semana</button>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400">
+              Este bloque incluye automáticamente tu edad, peso, VDOT, zonas de FC/ritmo, objetivos, los entrenamientos planeados vs los que realmente hiciste (con tu RPE y pulsaciones), y le pide a Gemini que devuelva el plan ajustado.
+            </p>
+            <textarea id="generatedPromptTextarea" rows="10" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none"></textarea>
+            <button onclick="copyPromptToClipboard()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center justify-center gap-2">
+              <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+              <span>Copiar Prompt para Pegar en Gemini</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Step 2 - Import Gemini's Plan / Adjustments -->
+        <div class="lg:col-span-6 space-y-5">
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="import" class="w-4 h-4 text-sky-400"></i>
+                <h3 class="font-display font-bold text-sm text-white">Importar Respuesta o Entrenamientos de Gemini</h3>
+              </div>
+              <span class="text-[11px] text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full">Acepta JSON o Texto de Gemini</span>
+            </div>
+
+            <p class="text-xs text-slate-400">
+              Pega aquí la respuesta completa que te dio Gemini (incluso si tiene texto explicativo antes o después del bloque JSON, o texto libre con entrenamientos por día). La app extraerá el análisis del entrenador y actualizará tus entrenamientos del calendario.
+            </p>
+
+            <textarea id="geminiImportTextarea" rows="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200" placeholder='Pega aquí la respuesta de Gemini (bloque JSON o lista de entrenamientos)...'></textarea>
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <input type="checkbox" id="replaceFuturePlannedCheckbox" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500" />
+                Reemplazar sesiones planeadas en las mismas fechas (preserva las ya completadas)
+              </label>
+              <button onclick="importFromGeminiText()" class="py-2.5 px-5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs flex items-center gap-2 shadow-lg shadow-sky-500/20">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                <span>Procesar y Aplicar al Calendario</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Latest Coach Feedback & Adjustment Log -->
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-display font-bold text-sm text-white">Último Diagnóstico y Ajuste de Gemini Coach</h3>
+              <span id="lastCoachAdjustmentDate" class="text-[11px] text-slate-400">--</span>
+            </div>
+            <div id="coachAnalysisBox" class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed space-y-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL: AGREGAR / EDITAR / REGISTRAR ENTRENAMIENTO ==================== -->
+  <div id="workoutModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-8">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 id="workoutModalTitle" class="font-display font-bold text-lg text-white">Planificar / Registrar Entrenamiento</h3>
+          <p class="text-xs text-slate-400">Compara lo que Gemini planeó vs lo que realmente corriste</p>
+        </div>
+        <button onclick="closeWorkoutModal()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="workoutForm" onsubmit="event.preventDefault(); saveWorkoutFromModal();" class="space-y-4">
+        <input type="hidden" id="wmId" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Fecha</label>
+            <input type="date" id="wmDate" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Tipo de Entrenamiento</label>
+            <select id="wmType" onchange="updateModalPhysiologyPreview()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="easy">Rodaje Suave / Recuperación (Z1-Z2)</option>
+              <option value="tempo">Tempo / Umbral de Lactato (Z3-Z4)</option>
+              <option value="intervals">Series / Intervalos VO2max (Z5)</option>
+              <option value="long">Tirada Larga / Fondo Aeróbico (Z2)</option>
+              <option value="fartlek">Fartlek / Cambios de Ritmo</option>
+              <option value="hills">Cuestas / Potencia Muscular</option>
+              <option value="strength">Fuerza / Core / Cruzado</option>
+              <option value="race">Competición / Test de Campo</option>
+              <option value="rest">Descanso Activo / Total</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Estado de la Sesión</label>
+            <select id="wmStatus" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="planned">Planeado (Pendiente)</option>
+              <option value="completed">Completado</option>
+              <option value="modified">Completado con Ajustes</option>
+              <option value="skipped">Omitido / No realizado</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Título / Estructura de la Sesión (ej. "4x1000m a 4:15 rec 90s" o "Rodaje Suave Z2")</label>
+          <input type="text" id="wmTitle" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Intervalos 5x1000m Z5 + 2km calentamiento" />
+        </div>
+
+        <!-- Physiological impact preview pill inside modal -->
+        <div id="wmPhysiologyPreview" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs flex flex-wrap items-center justify-between gap-2">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Planned vs Actual Columns -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          <!-- Planned Box -->
+          <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+            <div class="text-xs font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Objetivo Planeado (Gemini)
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Distancia Planeada (km)</label>
+                <input type="number" step="0.1" id="wmPlannedKm" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="10.0" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Duración Est. (min)</label>
+                <input type="number" id="wmPlannedMin" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="52" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Ritmo Objetivo (mm:ss)</label>
+                <input type="text" id="wmPlannedPace" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="05:10" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Zona FC Objetivo</label>
+                <input type="text" id="wmPlannedZone" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="Z2 (140-155 ppm)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Actual Logged Box -->
+          <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Resultado Real Registrado
+              </span>
+              <button type="button" onclick="copyPlannedToActual()" class="text-[11px] text-emerald-300 hover:underline">Copiar planeado</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[11px] text-slate-300 mb-1">Distancia Real (km)</label>
+                <input type="number" step="0.01" id="wmActualKm" oninput="autoCalculateActualPace()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="10.2" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-300 mb-1">Tiempo Real (min)</label>
+                <input type="number" step="0.1" id="wmActualMin" oninput="autoCalculateActualPace()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="51.5" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-300 mb-1">Ritmo Real (mm:ss)</label>
+                <input type="text" id="wmActualPace" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="05:03" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-300 mb-1">FC Media Real (ppm)</label>
+                <input type="number" id="wmActualHR" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="148" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-300 mb-1">Esfuerzo Percibido RPE (1 = Muy suave, 10 = Máximo agotamiento): <span id="wmRpeValueLabel" class="font-bold text-emerald-400">6</span>/10</label>
+              <input type="range" min="1" max="10" value="6" id="wmActualRpe" oninput="document.getElementById('wmRpeValueLabel').textContent = this.value" class="w-full accent-emerald-400" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Notas y Sensaciones para Gemini (ej. "Terminé muy entero", "Molestia en gemelo al km 7", "Hacía mucho calor")</label>
+          <textarea id="wmNotes" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Detalles de la sesión o motivos de ajuste..."></textarea>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+          <button type="button" id="wmDeleteBtn" onclick="deleteWorkoutFromModal()" class="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium hidden">
+            Eliminar Sesión
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="closeWorkoutModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium">
+              Cancelar
+            </button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs shadow-lg shadow-emerald-500/20">
+              Guardar Sesión
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: NUEVO / EDITAR OBJETIVO ==================== -->
+  <div id="goalModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-display font-bold text-lg text-white">Configurar Objetivo de Running</h3>
+        <button onclick="closeGoalModal()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="goalForm" onsubmit="event.preventDefault(); saveGoalFromModal();" class="space-y-3">
+        <input type="hidden" id="gmId" />
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Nombre del Evento o Meta</label>
+          <input type="text" id="gmName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Media Maratón de la Ciudad / Bajar de 45m en 10K" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Distancia (km)</label>
+            <select id="gmDistanceSelect" onchange="handleGoalDistanceSelect()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="5">5K (5.0 km)</option>
+              <option value="10">10K (10.0 km)</option>
+              <option value="15">15K (15.0 km)</option>
+              <option value="21.0975">Media Maratón (21.1 km)</option>
+              <option value="42.195">Maratón (42.2 km)</option>
+              <option value="custom">Otra distancia...</option>
+            </select>
+          </div>
+          <div id="gmCustomDistWrapper" class="hidden">
+            <label class="block text-xs text-slate-400 mb-1">Km Personalizados</label>
+            <input type="number" step="0.1" id="gmCustomDistance" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="30.0" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Fecha Meta</label>
+            <input type="date" id="gmDate" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Tiempo Meta (hh:mm:ss o mm:ss)</label>
+            <input type="text" id="gmTargetTime" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="01:38:00 o 44:30" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Prioridad</label>
+            <select id="gmPriority" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="A">Prioridad A (Carrera Principal)</option>
+              <option value="B">Prioridad B (Preparatoria / Test)</option>
+              <option value="C">Prioridad C (Control / Reto)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Notas del recorrido / desnivel</label>
+          <input type="text" id="gmNotes" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Circuito plano a nivel del mar / Ruta con colinas" />
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeGoalModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-xs">Guardar Objetivo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl bg-slate-900 border border-emerald-500/40 text-white text-xs font-medium shadow-2xl hidden items-center gap-2">
+    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toastMessage">Guardado correctamente</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
