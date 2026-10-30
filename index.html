@@ -55,9 +55,9 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="font-display font-bold text-lg tracking-tight text-white">RunPulse <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-sky-400">Gemini Coach</span></h1>
-            <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Pro Running Lab</span>
+            <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Watch Vision AI</span>
           </div>
-          <p class="text-xs text-slate-400 hidden sm:block">Planificación adaptativa, fisiología del entrenamiento y sincronización con Gemini AI</p>
+          <p class="text-xs text-slate-400 hidden sm:block">Planificación adaptativa, escáner de capturas de reloj y sincronización con Gemini AI</p>
         </div>
       </div>
 
@@ -70,6 +70,11 @@
           <span class="text-slate-400">Racha Semanal:</span>
           <span id="headerComplianceValue" class="font-display font-bold text-sky-400 text-sm">0%</span>
         </div>
+
+        <button onclick="openWorkoutModal()" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-semibold text-xs transition" title="Subir pantallazo de tu reloj">
+          <i data-lucide="watch" class="w-4 h-4"></i>
+          <span>Subir Captura Reloj</span>
+        </button>
 
         <button onclick="openGeminiModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-sky-500 hover:from-indigo-400 hover:to-sky-400 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-500/20 transition all">
           <i data-lucide="sparkles" class="w-4 h-4"></i>
@@ -108,7 +113,7 @@
       </button>
       <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="nav-tab flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition">
         <i data-lucide="calendar-days" class="w-4 h-4"></i>
-        <span>Calendario y Entrenamientos</span>
+        <span>Calendario & Capturas Reloj</span>
       </button>
       <button onclick="switchTab('physiology')" id="tabBtn-physiology" class="nav-tab flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition">
         <i data-lucide="radar" class="w-4 h-4"></i>
@@ -197,7 +202,7 @@
                 <span id="nextWorkoutDateLabel" class="text-xs text-slate-400"></span>
               </div>
               <button onclick="openWorkoutModal()" class="text-xs font-medium text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
-                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Agregar entrenamiento
+                <i data-lucide="watch" class="w-3.5 h-3.5"></i> Registrar sesión / Subir pantallazo de reloj
               </button>
             </div>
             <div id="nextWorkoutCardContent">
@@ -215,9 +220,9 @@
               </span>
               <span id="geminiSyncStatusBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">Activo</span>
             </div>
-            <h3 class="text-base font-bold text-white">¿Completaste o cambiaste entrenamientos esta semana?</h3>
+            <h3 class="text-base font-bold text-white">¿Subiste capturas de tu reloj o completaste sesión?</h3>
             <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
-              Cada vez que registras tus kilómetros reales, ritmo, pulsaciones y sensación de fatiga (RPE), Gemini analiza las desviaciones y reajusta las cargas de los próximos días.
+              Gemini lee los datos extraídos de tus pantallazos (ritmo, parciales, FC máxima, cadencia, zonas y Training Effect) para reajustar las cargas de tus próximos entrenamientos.
             </p>
             <div id="discrepancyAlertBox" class="mt-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs text-slate-300">
               <!-- Populated by JS -->
@@ -270,8 +275,8 @@
     <section id="tab-calendar" class="tab-panel hidden space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-5 rounded-2xl border border-slate-800">
         <div>
-          <h2 class="font-display font-bold text-lg text-white">Organizador de Entrenamientos por Día</h2>
-          <p class="text-xs text-slate-400">Planifica tu semana, registra tus tiempos reales y observa cómo responde tu cuerpo.</p>
+          <h2 class="font-display font-bold text-lg text-white">Organizador por Día & Escáner de Reloj</h2>
+          <p class="text-xs text-slate-400">Abre cualquier día para subir pantallazos de Garmin, Coros, Apple Watch, Strava, Polar, Huawei o Samsung Health.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button onclick="changeWeekOffset(-1)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1">
@@ -284,7 +289,7 @@
             Semana Sig. <i data-lucide="chevron-right" class="w-4 h-4"></i>
           </button>
           <button onclick="openWorkoutModal()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
-            <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Entrenamiento
+            <i data-lucide="watch" class="w-4 h-4"></i> Registrar / Subir Captura
           </button>
         </div>
       </div>
@@ -308,8 +313,8 @@
       <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 class="font-display font-bold text-base text-white">Bitácora Completa de Sesiones</h3>
-            <p class="text-xs text-slate-400">Haz clic en "Registrar Resultado" para anotar kilómetros reales, tiempo, pulsaciones y sensaciones.</p>
+            <h3 class="font-display font-bold text-base text-white">Bitácora Completa de Sesiones y Capturas del Reloj</h3>
+            <p class="text-xs text-slate-400">Haz clic en cualquier sesión para ver sus pantallazos, telemetría del reloj y análisis de Gemini.</p>
           </div>
           <div class="flex items-center gap-2">
             <select id="filterWorkoutType" onchange="renderWorkoutsTable()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200">
@@ -339,9 +344,9 @@
                 <th class="py-3 px-3">Fecha</th>
                 <th class="py-3 px-3">Tipo & Sesión</th>
                 <th class="py-3 px-3">Planeado</th>
-                <th class="py-3 px-3">Realizado</th>
-                <th class="py-3 px-3">FC / RPE</th>
-                <th class="py-3 px-3">Impacto Principal</th>
+                <th class="py-3 px-3">Realizado (Reloj)</th>
+                <th class="py-3 px-3">Telemetría / RPE</th>
+                <th class="py-3 px-3">Capturas</th>
                 <th class="py-3 px-3 text-right">Acciones</th>
               </tr>
             </thead>
@@ -648,7 +653,7 @@
             </span>
             <h2 class="font-display font-bold text-xl text-white">Puente Inteligente de Entrenamiento Adaptativo</h2>
             <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl">
-              Usa tu <strong>API Key de Gemini</strong> para reajustar tus entrenamientos con 1 clic directamente desde la app, o utiliza el <strong>Modo Copiar / Pegar</strong> para llevar tu reporte de progreso al chat de Gemini y pegar aquí la respuesta para actualizar tu calendario automáticamente.
+              Usa tu <strong>API Key de Gemini</strong> para analizar tus pantallazos del reloj y reajustar tus entrenamientos con 1 clic directamente desde la app, o utiliza el <strong>Modo Copiar / Pegar</strong>.
             </p>
           </div>
         </div>
@@ -710,7 +715,7 @@
               </div>
             </div>
             <p class="text-xs text-slate-400">
-              Este bloque incluye automáticamente tu edad, peso, VDOT, zonas de FC/ritmo, objetivos, los entrenamientos planeados vs los que realmente hiciste (con tu RPE y pulsaciones), y le pide a Gemini que devuelva el plan ajustado.
+              Incluye automáticamente tus métricas, zonas, objetivos y toda la telemetría extraída de los pantallazos de tu reloj (FC máx, cadencia, desnivel, splits y análisis).
             </p>
             <textarea id="generatedPromptTextarea" rows="10" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none"></textarea>
             <button onclick="copyPromptToClipboard()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center justify-center gap-2">
@@ -765,13 +770,13 @@
 
   </main>
 
-  <!-- ==================== MODAL: AGREGAR / EDITAR / REGISTRAR ENTRENAMIENTO ==================== -->
+  <!-- ==================== MODAL: AGREGAR / EDITAR / SUBIR CAPTURAS DE RELOJ ==================== -->
   <div id="workoutModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-8">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl my-8 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
-          <h3 id="workoutModalTitle" class="font-display font-bold text-lg text-white">Planificar / Registrar Entrenamiento</h3>
-          <p class="text-xs text-slate-400">Compara lo que Gemini planeó vs lo que realmente corriste</p>
+          <h3 id="workoutModalTitle" class="font-display font-bold text-lg text-white">Planificar / Registrar Entrenamiento & Capturas del Reloj</h3>
+          <p class="text-xs text-slate-400">Sube o pega (`Ctrl+V`) pantallazos de tu reloj o app (Garmin, Coros, Strava, Apple, Polar, Huawei) para extraer métricas con IA</p>
         </div>
         <button onclick="closeWorkoutModal()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-4 h-4"></i>
@@ -780,6 +785,42 @@
 
       <form id="workoutForm" onsubmit="event.preventDefault(); saveWorkoutFromModal();" class="space-y-4">
         <input type="hidden" id="wmId" />
+
+        <!-- SECCIÓN NUEVA: PANTALLAZOS DEL RELOJ Y APP + ESCÁNER GEMINI VISION -->
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-950 to-emerald-950/30 border border-indigo-500/30 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <div class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300">
+                <i data-lucide="watch" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-300">Pantallazos del Reloj / App Deportiva</h4>
+                <p class="text-[11px] text-slate-400">Puedes subir varias capturas (resumen, parciales por km, zonas de FC, cadencia) o pegarlas con <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200">Ctrl+V</kbd></p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition">
+                <i data-lucide="image-plus" class="w-3.5 h-3.5 text-sky-400"></i>
+                <span>Subir Capturas</span>
+                <input type="file" id="wmScreenshotInput" accept="image/*" multiple class="hidden" onchange="handleWatchScreenshotsUpload(event)" />
+              </label>
+
+              <button type="button" id="btnExtractFromWatch" onclick="analyzeWatchScreenshotsWithGemini()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 transition">
+                <i data-lucide="scan-eye" class="w-3.5 h-3.5"></i>
+                <span>Extraer Datos con Gemini IA</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Galería de miniaturas de capturas subidas -->
+          <div id="wmScreenshotsGallery" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Estado del escáner IA -->
+          <div id="wmVisionStatus" class="hidden text-xs p-2.5 rounded-xl"></div>
+        </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
@@ -848,30 +889,46 @@
             </div>
           </div>
 
-          <!-- Actual Logged Box -->
+          <!-- Actual Logged Box (with extended Watch metrics) -->
           <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Resultado Real Registrado
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Datos Reales del Reloj
               </span>
               <button type="button" onclick="copyPlannedToActual()" class="text-[11px] text-emerald-300 hover:underline">Copiar planeado</button>
             </div>
-            <div class="grid grid-cols-2 gap-2.5">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div>
-                <label class="block text-[11px] text-slate-300 mb-1">Distancia Real (km)</label>
-                <input type="number" step="0.01" id="wmActualKm" oninput="autoCalculateActualPace()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="10.2" />
+                <label class="block text-[10px] text-slate-300 mb-1">Dist. Real (km)</label>
+                <input type="number" step="0.01" id="wmActualKm" oninput="autoCalculateActualPace()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white" placeholder="10.2" />
               </div>
               <div>
-                <label class="block text-[11px] text-slate-300 mb-1">Tiempo Real (min)</label>
-                <input type="number" step="0.1" id="wmActualMin" oninput="autoCalculateActualPace()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="51.5" />
+                <label class="block text-[10px] text-slate-300 mb-1">Tiempo (min)</label>
+                <input type="number" step="0.1" id="wmActualMin" oninput="autoCalculateActualPace()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white" placeholder="51.5" />
               </div>
               <div>
-                <label class="block text-[11px] text-slate-300 mb-1">Ritmo Real (mm:ss)</label>
-                <input type="text" id="wmActualPace" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="05:03" />
+                <label class="block text-[10px] text-slate-300 mb-1">Ritmo (mm:ss)</label>
+                <input type="text" id="wmActualPace" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white" placeholder="05:03" />
               </div>
               <div>
-                <label class="block text-[11px] text-slate-300 mb-1">FC Media Real (ppm)</label>
-                <input type="number" id="wmActualHR" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" placeholder="148" />
+                <label class="block text-[10px] text-slate-300 mb-1">FC Media (ppm)</label>
+                <input type="number" id="wmActualHR" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white" placeholder="148" />
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">FC Máx (ppm)</label>
+                <input type="number" id="wmActualMaxHR" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white" placeholder="172" />
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">Cadencia (ppm)</label>
+                <input type="number" id="wmActualCadence" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white" placeholder="176" />
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">Desnivel + (m)</label>
+                <input type="number" id="wmActualElevation" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white" placeholder="85" />
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">Calorías (kcal)</label>
+                <input type="number" id="wmActualCalories" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white" placeholder="620" />
               </div>
             </div>
             <div>
@@ -881,9 +938,16 @@
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Notas y Sensaciones para Gemini (ej. "Terminé muy entero", "Molestia en gemelo al km 7", "Hacía mucho calor")</label>
-          <textarea id="wmNotes" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Detalles de la sesión o motivos de ajuste..."></textarea>
+        <!-- Resumen de Parciales / Splits / Zonas extraído de los pantallazos del reloj -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-indigo-300 mb-1">Parciales (Splits), Zonas de FC y Diagnóstico del Reloj (Autocompletado por IA o manual)</label>
+            <textarea id="wmWatchAnalysis" rows="3" class="w-full bg-slate-950 border border-indigo-500/30 rounded-xl px-3 py-2 text-xs text-slate-200" placeholder="Ej. Splits: Km 1 (5:12), Km 2 (5:05)... Zonas FC: 72% en Z2, 18% en Z3. Training Effect Aeróbico 3.4..."></textarea>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Tus Sensaciones Personales y Notas para Gemini</label>
+            <textarea id="wmNotes" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" placeholder="Ej. Terminé muy entero, o sentí pesadez en el km 7 por calor..."></textarea>
+          </div>
         </div>
 
         <div class="flex items-center justify-between pt-2 border-t border-slate-800">
@@ -895,11 +959,19 @@
               Cancelar
             </button>
             <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs shadow-lg shadow-emerald-500/20">
-              Guardar Sesión
+              Guardar Sesión y Capturas
             </button>
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL VISOR DE CAPTURAS EN PANTALLA COMPLETA ==================== -->
+  <div id="imageLightboxModal" onclick="closeImageLightbox()" class="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-md hidden items-center justify-center p-4 cursor-zoom-out">
+    <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+      <img id="lightboxImageEl" src="" alt="Captura del reloj" class="max-h-[82vh] w-auto rounded-2xl border border-slate-700 shadow-2xl object-contain" />
+      <p class="text-xs text-slate-400 mt-2">Haz clic en cualquier lugar para cerrar</p>
     </div>
   </div>
 
