@@ -555,7 +555,7 @@ function createDefaultState() {
 
   return {
     profile: {
-      name: 'Carlos (Media Maratón)',
+      name: 'Dykembel',
       age: 31,
       weight: 68.5,
       height: 175,
@@ -1043,6 +1043,14 @@ function createInitialMultiStore() {
     console.warn('No se pudo migrar estado previo:', e);
   }
 
+  if (
+    !firstUserState.profile.name ||
+    firstUserState.profile.name === 'Carlos (Media Maratón)' ||
+    firstUserState.profile.name === 'Corredor RunPulse'
+  ) {
+    firstUserState.profile.name = 'Dykembel';
+  }
+
   return {
     activeUserId: 'user-1',
     users: [
@@ -1051,12 +1059,6 @@ function createInitialMultiStore() {
         color: '#059669',
         createdAt: getLocalISODate(0),
         state: ensureUserStateIntegrity(firstUserState)
-      },
-      {
-        id: 'user-2',
-        color: '#0284c7',
-        createdAt: getLocalISODate(0),
-        state: ensureUserStateIntegrity(createSecondDemoRunnerState())
       }
     ]
   };
@@ -1073,6 +1075,23 @@ function loadState() {
       multiStore = JSON.parse(raw);
       if (!multiStore || !Array.isArray(multiStore.users) || multiStore.users.length === 0) {
         multiStore = createInitialMultiStore();
+      } else {
+        // Eliminar perfil demostrativo de Laura si estaba guardado en caché local
+        multiStore.users = multiStore.users.filter(
+          (u) => u.id !== 'user-2' && !String(u.state?.profile?.name || '').includes('Laura')
+        );
+        if (multiStore.users.length === 0) {
+          multiStore = createInitialMultiStore();
+        }
+        // Asegurar que el usuario principal lleve por nombre Dykembel si tenía el nombre por defecto anterior
+        const mainUser = multiStore.users[0];
+        if (
+          mainUser?.state?.profile &&
+          (mainUser.state.profile.name === 'Carlos (Media Maratón)' ||
+            mainUser.state.profile.name === 'Corredor RunPulse')
+        ) {
+          mainUser.state.profile.name = 'Dykembel';
+        }
       }
     } else {
       multiStore = createInitialMultiStore();
@@ -1187,7 +1206,7 @@ function renderUsersModalList() {
   const container = document.getElementById('usersListContainer');
   if (!container) return;
 
-  container.innerHTML = multiStore.users
+  const usersHtml = multiStore.users
     .map((u) => {
       const isActive = u.id === multiStore.activeUserId;
       const p = u.state.profile || {};
@@ -1195,7 +1214,7 @@ function renderUsersModalList() {
       const completedCount = (u.state.workouts || []).filter(
         (w) => w.status === 'completed' || w.status === 'modified'
       ).length;
-      const initial = (p.name || 'C').trim().charAt(0).toUpperCase();
+      const initial = (p.name || 'D').trim().charAt(0).toUpperCase();
 
       return `
         <div class="p-4 rounded-xl border transition flex items-center justify-between gap-3 ${
@@ -1209,7 +1228,7 @@ function renderUsersModalList() {
             </div>
             <div class="truncate">
               <div class="flex items-center gap-1.5">
-                <span class="font-bold text-sm text-slate-900 dark:text-white truncate">${p.name || 'Corredor'}</span>
+                <span class="font-bold text-sm text-slate-900 dark:text-white truncate">${p.name || 'Dykembel'}</span>
                 ${
                   isActive
                     ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">Activo</span>`
@@ -1242,6 +1261,24 @@ function renderUsersModalList() {
       `;
     })
     .join('');
+
+  const addCardHtml = `
+    <button
+      type="button"
+      onclick="document.getElementById('newRunnerName')?.focus()"
+      class="p-4 rounded-xl border border-dashed border-emerald-400/80 dark:border-emerald-500/40 bg-emerald-50/20 hover:bg-emerald-50/60 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/30 transition flex items-center gap-3 text-left"
+    >
+      <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-center shrink-0">
+        +
+      </div>
+      <div>
+        <div class="font-bold text-sm text-emerald-700 dark:text-emerald-300">Agregar o Crear Usuario</div>
+        <div class="text-[11px] text-slate-500 dark:text-slate-400">Haz clic para registrar un nuevo corredor</div>
+      </div>
+    </button>
+  `;
+
+  container.innerHTML = usersHtml + addCardHtml;
 }
 
 function switchActiveRunner(userId) {
@@ -3873,14 +3910,14 @@ function importAllData(event) {
 }
 
 function loadDemoDataConfirm() {
-  if (confirm('¿Restaurar los perfiles demostrativos (Carlos y Laura)? Esto restablecerá los datos de ejemplo.')) {
+  if (confirm('¿Restaurar los datos iniciales de Dykembel? Esto restablecerá los datos de ejemplo.')) {
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     multiStore = createInitialMultiStore();
     appState = getActiveUserEntry().state;
     saveState();
     switchTab('dashboard');
     refreshAllViews();
-    showToast('Perfiles demostrativos restaurados');
+    showToast('Datos de Dykembel restaurados');
   }
 }
 
