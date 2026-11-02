@@ -335,6 +335,7 @@ let volumeChartInstance = null;
 let paceHrChartInstance = null;
 let radarChartInstance = null;
 let intensityChartInstance = null;
+let banisterChartInstance = null;
 
 // ============================================================================
 // UTILIDADES DE FECHAS, TIEMPOS Y SONIDO DE RECORDATORIO
@@ -2577,6 +2578,7 @@ function renderDashboard() {
   }
 
   renderDashboardCharts();
+  renderBanisterMonitor();
   renderTrophiesShowcase();
   if (window.lucide) lucide.createIcons();
 }
@@ -3940,6 +3942,7 @@ window.addEventListener('DOMContentLoaded', () => {
       closeHydrationModal();
       closeTrophiesModal();
       closeRoutineTimerModal();
+      closeAudioCoachModal();
     }
   });
 });
@@ -5367,6 +5370,655 @@ function toggleRoutineSound() {
   if (icon) {
     icon.setAttribute('data-lucide', routineTimerState.soundEnabled ? 'volume-2' : 'volume-x');
     icon.className = `w-3.5 h-3.5 ${routineTimerState.soundEnabled ? 'text-emerald-600' : 'text-slate-400'}`;
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============================================================================
+// FEATURE 1: MONITOR DE FORMA FÍSICA VS FATIGA (MODELO BANISTER: CTL, ATL, TSB)
+// ============================================================================
+
+function calculateDailyTrainingStress(workout) {
+  if (!workout || workout.type === 'rest' || workout.status === 'skipped') return 0;
+  const isDone = workout.status === 'completed' || workout.status === 'modified';
+  const km = isDone ? (Number(workout.actualKm) || 0) : (Number(workout.plannedKm) || 0);
+  let min = isDone ? (Number(workout.actualMin) || 0) : 0;
+  if (min <= 0 && km > 0) min = km * 5.25;
+  if (min <= 0) return 0;
+
+  const rpe = isDone ? (Number(workout.actualRpe) || 5) : 5;
+  const typeWeights = {
+    easy: 0.9,
+    tempo: 1.35,
+    intervals: 1.6,
+    long: 1.25,
+    fartlek: 1.3,
+    hills: 1.45,
+    strength: 0.8,
+    race: 1.85,
+    rest: 0
+  };
+  const weight = typeWeights[workout.type] || 1.0;
+  const stress = (min * (rpe / 10) * weight * 1.4);
+  return Math.round(stress * 10) / 10;
+}
+
+function calculateBanisterTimeline(windowDays = 28) {
+  const totalDays = 42 + windowDays;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Mapear días desde hace totalDays días hasta hoy
+  const dayLoads = {};
+  for (let i = totalDays; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const iso = formatDateISO(d);
+    dayLoads[iso] = 0;
+  }
+
+  // Acumular carga de entrenamientos
+  appState.workouts.forEach((w) => {
+    if (dayLoads[w.date] !== undefined) {
+      dayLoads[w.date] += calculateDailyTrainingStress(w);
+    }
+  });
+
+  const dates = Object.keys(dayLoads).sort();
+  let ctl = 32.0; // Baseline inicial para que no empiece en cero irreal
+  let atl = 32.0;
+
+  const ctlHistory = [];
+  const atlHistory = [];
+  const tsbHistory = [];
+  const labelHistory = [];
+
+  const kCTL = 1 - Math.exp(-1 / 42); // ~0.02353
+  const kATL = 1 - Math.exp(-1 / 7);  // ~0.13312
+
+  dates.forEach((dateISO) => {
+    const load = dayLoads[dateISO] || 0;
+    ctl = ctl + (load - ctl) * kCTL;
+    atl = atl + (load - atl) * kATL;
+    const tsb = ctl - atl;
+
+    ctlHistory.push(Math.round(ctl * 10) / 10);
+    atlHistory.push(Math.round(atl * 10) / 10);
+    tsbHistory.push(Math.round(tsb * 10) / 10);
+
+    const d = new Date(dateISO + 'T00:00:00');
+    labelHistory.push(formatShortSpanishDate(dateISO));
+  });
+
+  // Tomar los últimos windowDays
+  const displayLabels = labelHistory.slice(-windowDays);
+  const displayCtl = ctlHistory.slice(-windowDays);
+  const displayAtl = atlHistory.slice(-windowDays);
+  const displayTsb = tsbHistory.slice(-windowDays);
+
+  const currentCtl = displayCtl[displayCtl.length - 1] || 0;
+  const currentAtl = displayAtl[displayAtl.length - 1] || 0;
+  const currentTsb = displayTsb[displayTsb.length - 1] || 0;
+
+  return {
+    labels: displayLabels,
+    ctl: displayCtl,
+    atl: displayAtl,
+    tsb: displayTsb,
+    current: {
+      ctl: currentCtl,
+      atl: currentAtl,
+      tsb: currentTsb
+    }
+  };
+}
+
+function renderBanisterMonitor() {
+  const data = calculateBanisterTimeline(28);
+
+  // Elementos DOM de métricas
+  const ctlEl = document.getElementById('banisterCtlValue');
+  const atlEl = document.getElementById('banisterAtlValue');
+  const tsbEl = document.getElementById('banisterTsbValue');
+  const badgeEl = document.getElementById('banisterFormBadge');
+  const tsbSub = document.getElementById('banisterTsbStateSub');
+  const diagTitle = document.getElementById('banisterDiagnosisTitle');
+  const diagText = document.getElementById('banisterDiagnosisText');
+
+  if (ctlEl) ctlEl.textContent = data.current.ctl.toFixed(1);
+  if (atlEl) atlEl.textContent = data.current.atl.toFixed(1);
+  if (tsbEl) {
+    const sign = data.current.tsb > 0 ? '+' : '';
+    tsbEl.textContent = `${sign}${data.current.tsb.toFixed(1)}`;
+  }
+
+  // Interpretación fisiológica de TSB
+  const tsb = data.current.tsb;
+  let stateTitle = '';
+  let stateBadge = '';
+  let badgeColor = '';
+  let advice = '';
+
+  if (tsb > 15) {
+    stateBadge = 'Pérdida de Carga (+15)';
+    badgeColor = 'bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300';
+    stateTitle = 'Fresco / Transición de Descanso Prolongado';
+    if (tsbSub) tsbSub.textContent = 'Fatiga nula, pero el estímulo aeróbico ha caído.';
+    advice = 'Tu cuerpo está 100% recuperado, pero la falta de estímulo en los últimos días puede empezar a reducir adaptaciones enzimáticas y capilares. Si no estás en semana de descanso programada, incorpora un rodaje en Z2 o cambios de ritmo suaves.';
+  } else if (tsb >= 5 && tsb <= 15) {
+    stateBadge = 'Pico Óptimo (+5 a +15)';
+    badgeColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300';
+    stateTitle = '¡Punto Óptimo de Rendimiento / Tapering Exitoso!';
+    if (tsbSub) tsbSub.textContent = 'Ventana dorada para competir o buscar marca.';
+    advice = '¡Sensaciones inmejorables! Tu fatiga aguda se ha disipado mientras que tu base aeróbica (CTL) se mantiene sólida. Estás en la ventana ideal para una carrera oficial o un test de marca personal.';
+  } else if (tsb >= -10 && tsb < 5) {
+    stateBadge = 'Asimilación Neutra (-10 a +5)';
+    badgeColor = 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200';
+    stateTitle = 'Equilibrio de Carga y Mantenimiento';
+    if (tsbSub) tsbSub.textContent = 'Fatiga y forma en balance controlado.';
+    advice = 'Tu carga de entrenamiento y tu tasa de recuperación se encuentran equilibradas. Puedes afrontar tanto tiradas largas como sesiones de ritmo umbral sin riesgo de acumulación excesiva.';
+  } else if (tsb >= -30 && tsb < -10) {
+    stateBadge = 'Sobrecarga Productiva (-10 a -30)';
+    badgeColor = 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300';
+    stateTitle = 'Bloque de Construcción y Adaptación Activa';
+    if (tsbSub) tsbSub.textContent = 'Creando nuevas adaptaciones fisiológicas.';
+    advice = 'Tu fatiga aguda supera a la forma crónica. Es la fase donde se forja el motor aeróbico y el VDOT. Es normal sentir pesadez en piernas; respeta escrupulosamente los rodajes suaves en Z2 y la hidratación.';
+  } else {
+    stateBadge = 'Fatiga Crítica (< -30)';
+    badgeColor = 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300';
+    stateTitle = 'Alerta: Carga Excesiva (Riesgo de Sobreentrenamiento)';
+    if (tsbSub) tsbSub.textContent = 'Riesgo elevado de sobrecarga tendinosa.';
+    advice = 'El estrés acumulado en los últimos 7 días es muy elevado. El sistema nervioso central y los tendones necesitan un respiro urgente. Convierte la próxima sesión en descanso activo o caminata suave.';
+  }
+
+  if (badgeEl) {
+    badgeEl.textContent = stateBadge;
+    badgeEl.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColor}`;
+  }
+  if (diagTitle) diagTitle.textContent = stateTitle;
+  if (diagText) diagText.textContent = advice;
+
+  // Gráfica Chart.js
+  const canvas = document.getElementById('banisterFitnessFatigueChart');
+  if (!canvas) return;
+
+  const colors = getChartThemeColors();
+  if (banisterChartInstance) {
+    banisterChartInstance.destroy();
+  }
+
+  banisterChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: 'Forma Crónica (CTL)',
+          data: data.ctl,
+          borderColor: '#0284c7',
+          backgroundColor: 'rgba(2, 132, 199, 0.08)',
+          borderWidth: 2.2,
+          tension: 0.3,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          fill: true
+        },
+        {
+          label: 'Fatiga Aguda (ATL)',
+          data: data.atl,
+          borderColor: '#f43f5e',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 3],
+          tension: 0.3,
+          pointRadius: 2,
+          pointHoverRadius: 5
+        },
+        {
+          label: 'Frescura (TSB = CTL - ATL)',
+          data: data.tsb,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          borderWidth: 1.8,
+          tension: 0.25,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: colors.textColor,
+            font: { size: 11, weight: '500' },
+            boxWidth: 12
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} pts`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: colors.mutedColor, font: { size: 10 } },
+          grid: { display: false }
+        },
+        y: {
+          ticks: { color: colors.mutedColor, font: { size: 10 } },
+          grid: { color: colors.gridColor }
+        }
+      }
+    }
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============================================================================
+// FEATURE 6: ENTRENADOR POR VOZ PARA SERIES & FARTLEKS (WEB SPEECH API LOCAL)
+// ============================================================================
+
+const INTERVAL_COACH_PRESETS = {
+  vo2max: {
+    id: 'vo2max',
+    name: '6x400m VO2max',
+    workSec: 90,
+    restSec: 60,
+    reps: 6,
+    workTitle: 'Serie de 400m a Ritmo Z5',
+    workTip: 'Ritmo objetivo VO2max (3K-5K). Mantén cadencia alta y braceo relajado.',
+    restTitle: 'Recuperación Activa (Trote Z1)',
+    restTip: 'Trote suave regenerativo para acelerar aclaramiento de lactato.'
+  },
+  tempo: {
+    id: 'tempo',
+    name: '4x1000m Umbral de Lactato',
+    workSec: 255, // 4m 15s
+    restSec: 90,
+    reps: 4,
+    workTitle: 'Repetición 1000m Ritmo Umbral',
+    workTip: 'Ritmo de 10K / Media Maratón. Respiración controlada 2x2.',
+    restTitle: 'Recuperación Activa',
+    restTip: 'Camina los primeros 30 segundos y trote muy suave el resto.'
+  },
+  fartlek: {
+    id: 'fartlek',
+    name: 'Fartlek Piramidal Continuo',
+    isCustomTimeline: true,
+    steps: [
+      { phase: 'work', durationSec: 60, title: 'Cambio 1 de 5: 1 min Vivo', tip: 'Ritmo alegre 5K, despierta los pies.' },
+      { phase: 'rest', durationSec: 60, title: 'Recuperación 1 min', tip: 'Trote suave sin pararte.' },
+      { phase: 'work', durationSec: 120, title: 'Cambio 2 de 5: 2 min Sostenidos', tip: 'Ritmo 10K firme con buena postura.' },
+      { phase: 'rest', durationSec: 60, title: 'Recuperación 1 min', tip: 'Recupera el aliento y baja hombros.' },
+      { phase: 'work', durationSec: 180, title: 'Cambio 3 de 5: 3 min Ritmo Umbral', tip: 'El núcleo de la sesión. Foco en la zancada.' },
+      { phase: 'rest', durationSec: 120, title: 'Recuperación 2 min', tip: 'Respira hondo para limpiar lactato.' },
+      { phase: 'work', durationSec: 120, title: 'Cambio 4 de 5: 2 min Rápido', tip: 'Aumenta cadencia en el último minuto.' },
+      { phase: 'rest', durationSec: 60, title: 'Recuperación 1 min', tip: 'Trote continuo.' },
+      { phase: 'work', durationSec: 60, title: 'Cambio 5 de 5: 1 min Sprint Final', tip: '¡Vacía el depósito con zancada limpia!' },
+      { phase: 'rest', durationSec: 60, title: 'Vuelta a la calma final', tip: 'Caminata y respiración profunda.' }
+    ]
+  },
+  sprint: {
+    id: 'sprint',
+    name: '8x200m Reactivo Neuromuscular',
+    workSec: 40,
+    restSec: 60,
+    reps: 8,
+    workTitle: 'Repetición 200m Sprint Reactivo',
+    workTip: 'Cadencia 185+ spm, tobillo rígido y apoyo de metatarso elástico.',
+    restTitle: 'Recuperación Pasiva / Caminata',
+    restTip: 'Recupera pulsaciones caminando para tener máxima energía en la siguiente.'
+  }
+};
+
+let audioCoachState = {
+  presetKey: 'vo2max',
+  stepIndex: 0,
+  flatSteps: [],
+  remainingSec: 90,
+  totalPhaseSec: 90,
+  isRunning: false,
+  timerInterval: null,
+  voiceEnabled: true,
+  selectedVoiceIndex: 0,
+  warned10s: false
+};
+
+function buildAudioCoachFlatSteps(presetKey) {
+  const preset = INTERVAL_COACH_PRESETS[presetKey] || INTERVAL_COACH_PRESETS.vo2max;
+  if (preset.isCustomTimeline) {
+    return preset.steps;
+  }
+  const steps = [];
+  for (let i = 1; i <= preset.reps; i++) {
+    steps.push({
+      phase: 'work',
+      durationSec: preset.workSec,
+      title: `Serie ${i} de ${preset.reps}: Trabajo Fuerte`,
+      tip: preset.workTip,
+      repNum: i,
+      totalReps: preset.reps
+    });
+    steps.push({
+      phase: 'rest',
+      durationSec: preset.restSec,
+      title: `Descanso ${i} de ${preset.reps}: Recuperación`,
+      tip: preset.restTip,
+      repNum: i,
+      totalReps: preset.reps
+    });
+  }
+  return steps;
+}
+
+function speakCue(text) {
+  if (!audioCoachState.voiceEnabled) return;
+  if (!('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const esVoices = voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith('es'));
+    if (esVoices.length > 0) {
+      const chosen = esVoices[audioCoachState.selectedVoiceIndex] || esVoices[0];
+      utterance.voice = chosen;
+    }
+
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    // Graceful fallback
+  }
+}
+
+function populateAudioCoachVoices() {
+  const select = document.getElementById('acVoiceSelector');
+  if (!select || !('speechSynthesis' in window)) return;
+
+  const voices = window.speechSynthesis.getVoices();
+  const esVoices = voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith('es'));
+  if (esVoices.length === 0) {
+    select.innerHTML = '<option value="0">Voz estándar del sistema</option>';
+    return;
+  }
+
+  select.innerHTML = esVoices.map((v, i) => `
+    <option value="${i}">${v.name} (${v.lang})</option>
+  `).join('');
+}
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = populateAudioCoachVoices;
+}
+
+function changeAudioCoachVoice(index) {
+  audioCoachState.selectedVoiceIndex = parseInt(index, 10) || 0;
+}
+
+function testAudioCueVoice() {
+  const runnerName = appState.profile.name || 'Corredor';
+  speakCue(`Entrenador por voz activo. ¡A por todas, ${runnerName}!`);
+}
+
+function openAudioCoachModal(presetKey = 'vo2max') {
+  const modal = document.getElementById('audioCoachModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  populateAudioCoachVoices();
+  selectAudioCoachPreset(presetKey);
+}
+
+function closeAudioCoachModal() {
+  pauseAudioCoachTimer();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  const modal = document.getElementById('audioCoachModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function selectAudioCoachPreset(presetKey) {
+  if (!INTERVAL_COACH_PRESETS[presetKey]) presetKey = 'vo2max';
+  pauseAudioCoachTimer();
+
+  audioCoachState.presetKey = presetKey;
+  audioCoachState.flatSteps = buildAudioCoachFlatSteps(presetKey);
+  audioCoachState.stepIndex = 0;
+  audioCoachState.remainingSec = audioCoachState.flatSteps[0].durationSec;
+  audioCoachState.totalPhaseSec = audioCoachState.flatSteps[0].durationSec;
+  audioCoachState.warned10s = false;
+
+  // Actualizar estilos de los botones del selector
+  ['vo2max', 'tempo', 'fartlek', 'sprint'].forEach((key) => {
+    const btn = document.getElementById(`acPresetBtn-${key}`);
+    if (btn) {
+      if (key === presetKey) {
+        btn.className = 'p-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-sm transition text-left';
+      } else {
+        btn.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition text-left';
+      }
+    }
+  });
+
+  updateAudioCoachUI();
+}
+
+function updateAudioCoachUI() {
+  const step = audioCoachState.flatSteps[audioCoachState.stepIndex];
+  if (!step) return;
+
+  const nextStep = audioCoachState.flatSteps[audioCoachState.stepIndex + 1];
+  const isWork = step.phase === 'work';
+
+  // Badge y contenedor
+  const card = document.getElementById('audioCoachCard');
+  const badge = document.getElementById('acPhaseBadge');
+  const timer = document.getElementById('acTimerDisplay');
+  const bar = document.getElementById('acIntervalProgressBar');
+
+  if (badge) {
+    badge.textContent = isWork ? 'Fase de Trabajo Fuerte' : 'Fase de Recuperación';
+    badge.className = isWork
+      ? 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'
+      : 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400';
+  }
+
+  if (card) {
+    card.className = isWork
+      ? 'p-5 sm:p-6 rounded-2xl border transition-all text-center space-y-4 coach-phase-work'
+      : 'p-5 sm:p-6 rounded-2xl border transition-all text-center space-y-4 coach-phase-rest';
+  }
+
+  if (timer) {
+    const m = Math.floor(audioCoachState.remainingSec / 60);
+    const s = audioCoachState.remainingSec % 60;
+    timer.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    timer.className = isWork
+      ? 'font-mono font-black text-5xl sm:text-6xl text-rose-600 dark:text-rose-400 tracking-tight'
+      : 'font-mono font-black text-5xl sm:text-6xl text-emerald-600 dark:text-emerald-400 tracking-tight';
+  }
+
+  if (bar) {
+    const pct = audioCoachState.totalPhaseSec > 0
+      ? (audioCoachState.remainingSec / audioCoachState.totalPhaseSec) * 100
+      : 0;
+    bar.style.width = `${pct}%`;
+    bar.className = isWork
+      ? 'bg-rose-500 h-2 rounded-full transition-all duration-300'
+      : 'bg-emerald-500 h-2 rounded-full transition-all duration-300';
+  }
+
+  // Título y tip
+  const titleEl = document.getElementById('acIntervalTitle');
+  const tipEl = document.getElementById('acIntervalTip');
+  const nextLabel = document.getElementById('acNextPhaseLabel');
+
+  if (titleEl) titleEl.textContent = step.title;
+  if (tipEl) tipEl.textContent = step.tip;
+  if (nextLabel) {
+    nextLabel.textContent = nextStep ? `${nextStep.title} (${nextStep.durationSec}s)` : '¡Último intervalo de la sesión!';
+  }
+
+  // Barra de progreso global
+  const totalBar = document.getElementById('acTotalProgressBar');
+  const totalPct = document.getElementById('acTotalProgressPct');
+  if (totalBar) {
+    const pct = Math.round((audioCoachState.stepIndex / audioCoachState.flatSteps.length) * 100);
+    totalBar.style.width = `${pct}%`;
+    if (totalPct) totalPct.textContent = `${pct}%`;
+  }
+
+  // Play/Pause button
+  const playLabel = document.getElementById('acPlayPauseLabel');
+  const playIcon = document.getElementById('acPlayPauseIcon');
+  if (playLabel) {
+    playLabel.textContent = audioCoachState.isRunning ? 'Pausar Series' : 'Iniciar Series';
+  }
+  if (playIcon) {
+    playIcon.setAttribute('data-lucide', audioCoachState.isRunning ? 'pause' : 'play');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function toggleAudioCoachPlayPause() {
+  if (audioCoachState.isRunning) {
+    pauseAudioCoachTimer();
+  } else {
+    startAudioCoachTimer();
+  }
+}
+
+function startAudioCoachTimer() {
+  if (audioCoachState.isRunning) return;
+  audioCoachState.isRunning = true;
+  updateAudioCoachUI();
+
+  // Locución inicial si comienza desde cero
+  const currentStep = audioCoachState.flatSteps[audioCoachState.stepIndex];
+  if (audioCoachState.remainingSec === audioCoachState.totalPhaseSec && currentStep) {
+    if (currentStep.phase === 'work') {
+      speakCue(`¡Iniciando ${currentStep.title}! Mantén el ritmo objetivo.`);
+    } else {
+      speakCue(`Tiempo de recuperación activa.`);
+    }
+  }
+
+  audioCoachState.timerInterval = setInterval(() => {
+    if (audioCoachState.remainingSec > 0) {
+      audioCoachState.remainingSec--;
+
+      // Aviso 10 segundos antes de terminar
+      if (audioCoachState.remainingSec === 10 && !audioCoachState.warned10s) {
+        audioCoachState.warned10s = true;
+        if (currentStep && currentStep.phase === 'work') {
+          speakCue('Últimos 10 segundos, ¡mantén la fuerza!');
+        } else {
+          speakCue('10 segundos para la siguiente repetición.');
+        }
+      }
+
+      // Beeps acústicos en los últimos 3 segundos
+      if (audioCoachState.remainingSec <= 3 && audioCoachState.remainingSec > 0) {
+        playTimerBeep(false);
+      }
+
+      updateAudioCoachUI();
+    } else {
+      // Fin del intervalo actual
+      playTimerBeep(true);
+      if (audioCoachState.stepIndex < audioCoachState.flatSteps.length - 1) {
+        nextAudioCoachInterval(true);
+      } else {
+        // Sesión finalizada completamente
+        pauseAudioCoachTimer();
+        const runnerName = appState.profile.name || 'Corredor';
+        speakCue(`¡Excelente trabajo, ${runnerName}! Entrenamiento de series completado con éxito. Pasa a la vuelta a la calma.`);
+        showToast('¡Entrenamiento de series finalizado! Gran esfuerzo.');
+        const totalBar = document.getElementById('acTotalProgressBar');
+        const totalPct = document.getElementById('acTotalProgressPct');
+        if (totalBar) totalBar.style.width = '100%';
+        if (totalPct) totalPct.textContent = '100%';
+      }
+    }
+  }, 1000);
+}
+
+function pauseAudioCoachTimer() {
+  audioCoachState.isRunning = false;
+  if (audioCoachState.timerInterval) {
+    clearInterval(audioCoachState.timerInterval);
+    audioCoachState.timerInterval = null;
+  }
+  updateAudioCoachUI();
+}
+
+function resetAudioCoach() {
+  pauseAudioCoachTimer();
+  audioCoachState.stepIndex = 0;
+  const first = audioCoachState.flatSteps[0];
+  if (first) {
+    audioCoachState.remainingSec = first.durationSec;
+    audioCoachState.totalPhaseSec = first.durationSec;
+  }
+  audioCoachState.warned10s = false;
+  updateAudioCoachUI();
+}
+
+function nextAudioCoachInterval(autoStarted = false) {
+  if (audioCoachState.stepIndex < audioCoachState.flatSteps.length - 1) {
+    audioCoachState.stepIndex++;
+    const step = audioCoachState.flatSteps[audioCoachState.stepIndex];
+    audioCoachState.remainingSec = step.durationSec;
+    audioCoachState.totalPhaseSec = step.durationSec;
+    audioCoachState.warned10s = false;
+    updateAudioCoachUI();
+
+    if (autoStarted || audioCoachState.isRunning) {
+      if (step.phase === 'work') {
+        speakCue(`¡Iniciando ${step.title}! ${step.tip}`);
+      } else {
+        speakCue(`Tiempo. Recuperación de ${step.durationSec} segundos. Trote suave.`);
+      }
+    }
+  }
+}
+
+function prevAudioCoachInterval() {
+  if (audioCoachState.stepIndex > 0) {
+    audioCoachState.stepIndex--;
+    const step = audioCoachState.flatSteps[audioCoachState.stepIndex];
+    audioCoachState.remainingSec = step.durationSec;
+    audioCoachState.totalPhaseSec = step.durationSec;
+    audioCoachState.warned10s = false;
+    updateAudioCoachUI();
+  }
+}
+
+function toggleAudioCoachSound() {
+  audioCoachState.voiceEnabled = !audioCoachState.voiceEnabled;
+  const label = document.getElementById('acVoiceLabel');
+  const icon = document.getElementById('acVoiceIcon');
+  if (label) {
+    label.textContent = audioCoachState.voiceEnabled ? 'Voz ON' : 'Voz OFF';
+  }
+  if (icon) {
+    icon.setAttribute('data-lucide', audioCoachState.voiceEnabled ? 'volume-2' : 'volume-x');
+    icon.className = `w-3.5 h-3.5 ${audioCoachState.voiceEnabled ? 'text-indigo-600' : 'text-slate-400'}`;
   }
   if (window.lucide) lucide.createIcons();
 }
