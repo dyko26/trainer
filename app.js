@@ -1,9 +1,13 @@
 // ============================================================================
-// RunPulse AI — Control de Running, Fisiología, Escáner de Reloj & Gemini AI
+// RunPulse AI — App & Sitio Web Multi-Corredor Local
+// Control de Entrenamientos, Recomendaciones Diarias, Recordatorios,
+// Datos Curiosos del Running, Escáner de Reloj & Entrenador Gemini AI
 // ============================================================================
 
-const STORAGE_KEY = 'runpulse_ai_state_v1';
+const LEGACY_STORAGE_KEY = 'runpulse_ai_state_v1';
+const MULTI_USER_STORAGE_KEY = 'runpulse_multi_users_v2';
 const GEMINI_KEY_STORAGE = 'runpulse_gemini_api_key';
+const THEME_STORAGE_KEY = 'runpulse_theme_pref';
 
 // Catálogo científico de tipos de entrenamiento y sus adaptaciones fisiológicas (escala 1-10)
 const WORKOUT_TYPES_CATALOG = {
@@ -12,12 +16,12 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Rodaje Suave / Recuperación',
     shortName: 'Rodaje Suave',
     zone: 'Z1 - Z2 (60-75% FC)',
-    color: '#10b981',
-    badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    color: '#059669',
+    badgeClass: 'badge-easy',
     primaryBenefit: 'Densidad mitocondrial, capilarización y oxidación de grasas',
     recoveryHours: '12 - 24 h',
     description:
-      'El pilar del 80% del volumen semanal. Estimula el crecimiento de mitocondrias y capilares sanguíneos en las fibras lentas (Tipo I) sin generar fatiga del sistema nervioso central.',
+      'El pilar del 80% del volumen semanal. Estimula el crecimiento de mitocondrias y capilares sanguíneos en las fibras lentas (Tipo I) sin generar fatiga nerviosa.',
     scores: {
       aerobicBase: 9,
       lactateThreshold: 3,
@@ -32,8 +36,8 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Tempo / Umbral de Lactato',
     shortName: 'Tempo / Umbral',
     zone: 'Z3 - Z4 (82-89% FC)',
-    color: '#f59e0b',
-    badgeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    color: '#d97706',
+    badgeClass: 'badge-tempo',
     primaryBenefit: 'Aclaramiento de lactato y sostener ritmos altos por más tiempo',
     recoveryHours: '36 - 48 h',
     description:
@@ -52,9 +56,9 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Series / Intervalos VO2max',
     shortName: 'Series VO2max',
     zone: 'Z5 (92-100% FC)',
-    color: '#ef4444',
-    badgeClass: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-    primaryBenefit: 'Volumen sistólico cardíaco, potencia aeróbica máxima (VO2max)',
+    color: '#e11d48',
+    badgeClass: 'badge-intervals',
+    primaryBenefit: 'Volumen sistólico cardíaco y potencia aeróbica máxima (VO2max)',
     recoveryHours: '48 - 72 h',
     description:
       'Repeticiones de 400m a 1600m a ritmo de 3K-5K. Eleva el techo aeróbico (VO2max), fortalece el músculo cardíaco y recluta fibras rápidas (Tipo IIa).',
@@ -72,12 +76,12 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Tirada Larga / Fondo Aeróbico',
     shortName: 'Tirada Larga',
     zone: 'Z2 (68-78% FC)',
-    color: '#38bdf8',
-    badgeClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+    color: '#0284c7',
+    badgeClass: 'badge-long',
     primaryBenefit: 'Reservas de glucógeno, resistencia a la fatiga y fortaleza tendinosa',
     recoveryHours: '36 - 60 h',
     description:
-      'Expande los depósitos de glucógeno muscular y hepático, enseña al cuerpo a usar ácidos grasos cuando baja el glucógeno y fortalece tendones, fascias y mente.',
+      'Expande los depósitos de glucógeno muscular y hepático, enseña al cuerpo a usar ácidos grasos cuando baja el glucógeno y fortalece tendones y mente.',
     scores: {
       aerobicBase: 10,
       lactateThreshold: 4,
@@ -92,8 +96,8 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Fartlek / Cambios de Ritmo',
     shortName: 'Fartlek',
     zone: 'Z2 a Z4 Variable',
-    color: '#a855f7',
-    badgeClass: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+    color: '#9333ea',
+    badgeClass: 'badge-fartlek',
     primaryBenefit: 'Transición aeróbica-anaeróbica y flexibilidad metabólica',
     recoveryHours: '24 - 48 h',
     description:
@@ -112,12 +116,12 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Cuestas / Potencia Específica',
     shortName: 'Cuestas',
     zone: 'Z4 - Z5 / Neuromuscular',
-    color: '#f97316',
-    badgeClass: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-    primaryBenefit: 'Fuerza específica de glúteos/gemelos y economía de zancada con bajo impacto',
+    color: '#ea580c',
+    badgeClass: 'badge-hills',
+    primaryBenefit: 'Fuerza específica de glúteos/gemelos y economía con menor impacto',
     recoveryHours: '36 - 48 h',
     description:
-      'Construye potencia en la cadena posterior (glúteos, isquios, sóleos) y mejora la rigidez reactiva del tendón de Aquiles con menor impacto articular que en llano.',
+      'Construye potencia en la cadena posterior (glúteos, isquios, sóleos) y mejora la reactividad del tendón de Aquiles con menor impacto articular que en llano.',
     scores: {
       aerobicBase: 4,
       lactateThreshold: 6,
@@ -132,12 +136,12 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Fuerza / Core / Prevención',
     shortName: 'Fuerza & Core',
     zone: 'Neuromuscular',
-    color: '#ec4899',
-    badgeClass: 'bg-pink-500/15 text-pink-400 border-pink-500/30',
+    color: '#db2777',
+    badgeClass: 'badge-strength',
     primaryBenefit: 'Estabilidad pélvica, prevención de lesiones y economía de carrera',
     recoveryHours: '24 - 48 h',
     description:
-      'Entrenamiento de fuerza reactiva, unilateral y core. Reduce el gasto energético por zancada hasta un 4-6% y protege rodillas, cadera y tendón rotuliano/aquiles.',
+      'Entrenamiento de fuerza reactiva, unilateral y core. Mejora la economía de carrera hasta un 4-6% y protege rodillas, cadera y tendón de Aquiles.',
     scores: {
       aerobicBase: 1,
       lactateThreshold: 2,
@@ -152,12 +156,12 @@ const WORKOUT_TYPES_CATALOG = {
     name: 'Competición / Test de Campo',
     shortName: 'Carrera / Test',
     zone: 'Z4 - Z5 (Esfuerzo Máx)',
-    color: '#eab308',
-    badgeClass: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+    color: '#ca8a04',
+    badgeClass: 'badge-race',
     primaryBenefit: 'Expresión máxima de rendimiento y calibración de zonas VDOT',
     recoveryHours: '72 - 120 h',
     description:
-      'Pone a prueba todos los sistemas fisiológicos y psicológicos simultáneamente. Sirve para actualizar tu VDOT y recalibrar los ritmos de Gemini.',
+      'Pone a prueba todos los sistemas fisiológicos y psicológicos simultáneamente. Sirve para actualizar tu VDOT y recalibrar los ritmos.',
     scores: {
       aerobicBase: 7,
       lactateThreshold: 9,
@@ -173,7 +177,7 @@ const WORKOUT_TYPES_CATALOG = {
     shortName: 'Descanso',
     zone: 'Recuperación',
     color: '#64748b',
-    badgeClass: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
+    badgeClass: 'badge-rest',
     primaryBenefit: 'Reparación fibrilar, síntesis proteica y equilibrio hormonal',
     recoveryHours: '0 h',
     description:
@@ -198,11 +202,133 @@ const PHYSIOLOGY_DIMENSIONS = [
   { key: 'glycogenEndurance', label: 'Resistencia y Glucógeno' }
 ];
 
-// Estado global de la aplicación
-let appState = null;
+// ============================================================================
+// ENCICLOPEDIA DE DATOS CURIOSOS DEL RUNNING (CIENCIA, CULTURA Y PRÁCTICA)
+// ============================================================================
+
+const DEFAULT_RUNNING_FACTS = [
+  {
+    id: 'fact-1',
+    category: 'Fisiología',
+    title: 'El lactato no es el culpable del dolor muscular ni un desecho tóxico',
+    fact: 'Durante décadas se creyó que el ácido láctico causaba las agujetas y la fatiga. Hoy sabemos que el lactato es un combustible premium: tu corazón y tu cerebro lo oxidan directamente para obtener energía mientras corres.',
+    tip: 'Los entrenamientos de Tempo (Z3-Z4) multiplican los transportadores MCT1 que convierten el lactato en energía limpia.'
+  },
+  {
+    id: 'fact-2',
+    category: 'Biomecánica',
+    title: 'El tendón de Aquiles devuelve hasta el 35% de la energía gratis en cada zancada',
+    fact: 'El tendón de Aquiles funciona como un resorte biológico de alta precisión. Al aterrizar almacena energía elástica y al despegar la libera sin gastar oxígeno adicional.',
+    tip: 'Subir la cadencia cerca de 172-180 pasos por minuto y hacer saltos suaves o elevaciones de talón mejora ese retorno elástico.'
+  },
+  {
+    id: 'fact-3',
+    category: 'Entrenamiento',
+    title: '¿Por qué el 80% de los kilómetros de los campeones olímpicos son lentos?',
+    fact: 'El fisiólogo Stephen Seiler demostró que los corredores de élite hacen ~80% de sus sesiones en Zona 1-2 (ritmo conversacional). Correr suave estimula mitocondrias y capilares sin estresar el sistema nervioso autónomo.',
+    tip: 'Si en tu rodaje suave no puedes hablar en frases completas sin jadear, vas demasiado rápido para estar en Zona 2.'
+  },
+  {
+    id: 'fact-4',
+    category: 'Fisiología',
+    title: 'Tu volumen de sangre aumenta hasta un 15% tras 3 semanas de running constante',
+    fact: 'Una de las primeras adaptaciones al correr es la expansión del plasma sanguíneo. Más volumen de sangre significa que tu corazón bombea más oxígeno en cada latido con menos pulsaciones.',
+    tip: 'Hidratarte con agua y una pizca de electrolitos después de rodar acelera esta expansión plasmática.'
+  },
+  {
+    id: 'fact-5',
+    category: 'Nutrición',
+    title: 'El "Muro" del kilómetro 30 ocurre porque el cuerpo solo guarda ~2000 kcal de glucógeno',
+    fact: 'Los músculos y el hígado almacenan cerca de 400-500 gramos de carbohidratos en forma de glucógeno. A ritmo de carrera, esa reserva dura entre 75 y 90 minutos.',
+    tip: 'En tiradas largas mayores a 75 minutos, practica ingerir 30 a 60g de carbohidratos por hora antes de sentir hambre.'
+  },
+  {
+    id: 'fact-6',
+    category: 'Biomecánica',
+    title: 'Alternar entre 2 pares de zapatillas reduce el riesgo de lesión en un 39%',
+    fact: 'Un estudio publicado en el Scandinavian Journal of Medicine & Science in Sports demostró que rotar zapatillas con diferente espuma o drop varía milimétricamente las cargas sobre tendones y huesos.',
+    tip: 'Si usas más de un par, deja al menos 24-48h entre usos para que la espuma EVA/PEBA recupere su descompresión original.'
+  },
+  {
+    id: 'fact-7',
+    category: 'Fisiología',
+    title: 'El "Runner’s High" no lo producen las endorfinas, sino los endocannabinoides',
+    fact: 'Las endorfinas son moléculas demasiado grandes para cruzar la barrera hematoencefálica. La sensación de paz y euforia tras correr de 35 a 50 minutos proviene de la anandamida, un endocannabinoide natural del cerebro.',
+    tip: 'Los rodajes continuos en Zona 2-3 de al menos 40 minutos son los que generan mayor liberación de anandamida.'
+  },
+  {
+    id: 'fact-8',
+    category: 'Historia',
+    title: 'El récord mundial de maratón equivale a correr 422 series seguidas de 100 metros en 17 segundos',
+    fact: 'Correr un maratón en cerca de 2 horas implica sostener un ritmo aproximado de 2:50 min/km (21.1 km/h) durante más de 42 kilómetros sin parar.',
+    tip: 'La clave de los maratonistas no es solo el VO2max, sino la economía de carrera: gastar menos oxígeno al mismo ritmo.'
+  },
+  {
+    id: 'fact-9',
+    category: 'Entrenamiento',
+    title: 'El entrenamiento de fuerza pesada mejora tu economía de carrera hasta un 5%',
+    fact: 'A diferencia del mito de que las pesas "vuelven lento al corredor", ejercicios como sentadilla búlgara y peso muerto mejoran la coordinación neuromuscular sin aumentar peso corporal.',
+    tip: 'Agenda tus sesiones de fuerza al menos 6 horas después de correr o en días suaves, nunca justo antes de hacer series.'
+  },
+  {
+    id: 'fact-10',
+    category: 'Fisiología',
+    title: 'El músculo sóleo es el verdadero motor oculto del corredor de fondo',
+    fact: 'Estudios de biomecánica revelan que el sóleo (debajo de los gemelos) soporta fuerzas de hasta 6 a 8 veces tu peso corporal durante el trote y está compuesto en un 80% por fibras resistentes a la fatiga.',
+    tip: 'Fortalece el sóleo haciendo elevaciones de talón con las rodillas flexionadas (sentado o en pared).'
+  },
+  {
+    id: 'fact-11',
+    category: 'Nutrición',
+    title: 'El jugo de remolacha (betabel) reduce el costo de oxígeno al correr',
+    fact: 'Los nitratos naturales de la remolacha se convierten en óxido nítrico en la sangre, dilatando los vasos sanguíneos y haciendo que las mitocondrias produzcan más energía con menos oxígeno.',
+    tip: 'Consumir remolacha o espinaca 2 a 3 horas antes de un test de 5K o 10K puede mejorar tu rendimiento entre 1% y 2%.'
+  },
+  {
+    id: 'fact-12',
+    category: 'Entrenamiento',
+    title: 'La deriva cardíaca te avisa cuándo te estás deshidratando o quedando sin glucógeno',
+    fact: 'Si corres al mismo ritmo constante pero después del minuto 40 tus pulsaciones suben 8-12 ppm (deriva cardíaca), tu corazón está latiendo más rápido porque perdió volumen sanguíneo por sudor.',
+    tip: 'Una deriva menor al 5% en tu tirada larga indica que tu base aeróbica en Zona 2 está muy sólida.'
+  },
+  {
+    id: 'fact-13',
+    category: 'Biomecánica',
+    title: 'Tus pies golpean el suelo unas 800 a 1,000 veces por cada kilómetro corrido',
+    fact: 'En una carrera de 10K das cerca de 9,000 pasos. Aterrizar ligeramente más cerca de tu centro de gravedad (debajo de tu cadera y no adelante) frena menos tu impulso.',
+    tip: 'En lugar de intentar alargar la zancada hacia adelante, enfócate en empujar el suelo hacia atrás.'
+  },
+  {
+    id: 'fact-14',
+    category: 'Fisiología',
+    title: 'Correr estimula el nacimiento de nuevas neuronas en el hipocampo',
+    fact: 'El ejercicio aeróbico libera una proteína llamada BDNF (Factor Neurotrófico Derivado del Cerebro), que actúa como fertilizante neuronal mejorando la memoria y el aprendizaje.',
+    tip: 'Una carrera suave de 30 minutos por la mañana mejora el enfoque cognitivo durante las siguientes 4 a 6 horas.'
+  },
+  {
+    id: 'fact-15',
+    category: 'Entrenamiento',
+    title: 'No pierdes tu condición aeróbica por descansar de 3 a 5 días',
+    fact: 'El VO2max y la capilarización muscular tardan más de 10 a 14 días de inactividad total en empezar a disminuir de forma significativa. En cambio, descansar 3 días ante una molestia evita semanas de lesión.',
+    tip: 'Cuando sientas fatiga acumulada o RPE muy alto, cambiar un entreno por descanso produce supercompensación.'
+  },
+  {
+    id: 'fact-16',
+    category: 'Historia',
+    title: '¿Por qué el maratón mide exactamente 42 kilómetros y 195 metros?',
+    fact: 'En los primeros Juegos Olímpicos modernos (1896) medía unos 40 km. Fue en Londres 1908 cuando se alargó a 42.195 km para que la salida fuera frente al Castillo de Windsor y la meta frente al palco real.',
+    tip: 'En el predictor VDOT de la pestaña Objetivos puedes ver tu proyección exacta para los 42.195 km.'
+  }
+];
+
+// Estado global en memoria
+let multiStore = null; // Contiene { activeUserId, users: [...] }
+let appState = null;   // Referencia directa al state del corredor activo
 let currentWeekOffset = 0;
 let selectedPhysiologyType = 'intervals';
-let currentModalScreenshots = []; // Arreglo temporal de imágenes en base64 para el modal abierto
+let currentModalScreenshots = [];
+let currentCuriousFactIndex = 0;
+let reminderCheckInterval = null;
 
 // Instancias de gráficas Chart.js
 let volumeChartInstance = null;
@@ -211,7 +337,7 @@ let radarChartInstance = null;
 let intensityChartInstance = null;
 
 // ============================================================================
-// UTILIDADES DE FECHAS Y TIEMPOS
+// UTILIDADES DE FECHAS, TIEMPOS Y SONIDO DE RECORDATORIO
 // ============================================================================
 
 function getLocalISODate(offsetDays = 0) {
@@ -252,12 +378,8 @@ function parseTimeToSeconds(timeStr) {
   const clean = timeStr.trim();
   const parts = clean.split(':').map(Number);
   if (parts.some(isNaN)) return 0;
-  if (parts.length === 2) {
-    return parts[0] * 60 + parts[1];
-  }
-  if (parts.length === 3) {
-    return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  }
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
   return 0;
 }
 
@@ -283,6 +405,35 @@ function decimalMinutesToPaceString(decMin) {
   return formatSecondsToTime(Math.round(decMin * 60));
 }
 
+function scrollToElement(elementId) {
+  setTimeout(() => {
+    const el = document.getElementById(elementId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+// Sonido suave de campana con Web Audio API para recordatorios
+function playReminderChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.14); // A5
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.65);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.65);
+  } catch (_) {
+    // Ignorar si el navegador bloquea audio sin interacción
+  }
+}
+
 // ============================================================================
 // CÁLCULOS FISIOLÓGICOS (JACK DANIELS VDOT & KARVONEN HR ZONES)
 // ============================================================================
@@ -301,6 +452,7 @@ function calculateVDOTFromRace(distanceMeters, timeSeconds) {
 }
 
 function getRunnerVDOT(profile) {
+  if (!profile) return 45.0;
   const candidates = [];
   const s5k = parseTimeToSeconds(profile.pr5k);
   if (s5k > 0) candidates.push(calculateVDOTFromRace(5000, s5k));
@@ -312,12 +464,8 @@ function getRunnerVDOT(profile) {
   if (s42k > 0) candidates.push(calculateVDOTFromRace(42195, s42k));
 
   const valid = candidates.filter((v) => v !== null);
-  if (valid.length > 0) {
-    return Math.max(...valid);
-  }
-  if (profile.vo2max && Number(profile.vo2max) > 25) {
-    return Number(profile.vo2max);
-  }
+  if (valid.length > 0) return Math.max(...valid);
+  if (profile.vo2max && Number(profile.vo2max) > 25) return Number(profile.vo2max);
   return 45.0;
 }
 
@@ -327,8 +475,7 @@ function getPacePerKmForVDOTIntensity(vdot, intensityPct) {
   const b = 0.182258;
   const c = -(4.6 + targetVo2);
   const velocity = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-  const secondsPerKm = (1000 / velocity) * 60;
-  return secondsPerKm;
+  return (1000 / velocity) * 60;
 }
 
 function predictRaceTimeSeconds(vdot, distanceMeters) {
@@ -337,11 +484,8 @@ function predictRaceTimeSeconds(vdot, distanceMeters) {
   for (let i = 0; i < 30; i++) {
     const mid = (low + high) / 2;
     const est = calculateVDOTFromRace(distanceMeters, mid);
-    if (est && est > vdot) {
-      low = mid;
-    } else {
-      high = mid;
-    }
+    if (est && est > vdot) low = mid;
+    else high = mid;
   }
   return Math.round((low + high) / 2);
 }
@@ -351,7 +495,6 @@ function getTrainingZones(profile) {
   const restHR = Number(profile.restHR) || 55;
   const hrr = Math.max(maxHR - restHR, 80);
   const vdot = getRunnerVDOT(profile);
-
   const calcHR = (pct) => Math.round(restHR + hrr * pct);
 
   return [
@@ -360,51 +503,46 @@ function getTrainingZones(profile) {
       name: 'Recuperación Activa',
       hrRange: `${calcHR(0.55)} - ${calcHR(0.65)} ppm`,
       paceRange: `${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.62))} - ${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.56))} /km`,
-      color: 'border-slate-500/40 bg-slate-900/80 text-slate-300',
       dot: 'bg-slate-400',
       desc: 'Calentamiento, enfriamiento y regeneración muscular.'
     },
     {
       zone: 'Z2',
-      name: 'Base Aeróbica / Quema Grasa',
+      name: 'Base Aeróbica / Conversacional',
       hrRange: `${calcHR(0.65)} - ${calcHR(0.76)} ppm`,
       paceRange: `${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.72))} - ${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.65))} /km`,
-      color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300',
-      dot: 'bg-emerald-400',
-      desc: 'Rodajes suaves y tiradas largas (Ritmo conversacional).'
+      dot: 'bg-emerald-500',
+      desc: 'Rodajes suaves y tiradas largas (pilar del 80% semanal).'
     },
     {
       zone: 'Z3',
       name: 'Tempo Aeróbico / Ritmo Maratón',
       hrRange: `${calcHR(0.76)} - ${calcHR(0.84)} ppm`,
       paceRange: `${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.81))} - ${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.76))} /km`,
-      color: 'border-sky-500/40 bg-sky-950/20 text-sky-300',
-      dot: 'bg-sky-400',
-      desc: 'Esfuerzo controlado sostenido, resistencia específica.'
+      dot: 'bg-sky-500',
+      desc: 'Esfuerzo controlado sostenido y resistencia específica.'
     },
     {
       zone: 'Z4',
-      name: 'Umbral Anaeróbico / Lactato',
+      name: 'Umbral de Lactato',
       hrRange: `${calcHR(0.84)} - ${calcHR(0.91)} ppm`,
       paceRange: `${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.88))} - ${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.84))} /km`,
-      color: 'border-amber-500/40 bg-amber-950/20 text-amber-300',
-      dot: 'bg-amber-400',
-      desc: 'Ritmo que puedes sostener ~45-60 min. Mejora reciclaje de lactato.'
+      dot: 'bg-amber-500',
+      desc: 'Ritmo sostenible ~45-60 min. Mejora el reciclaje de lactato.'
     },
     {
       zone: 'Z5',
       name: 'Potencia VO2 Máx / Series',
       hrRange: `${calcHR(0.91)} - ${maxHR} ppm`,
       paceRange: `${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 1.0))} - ${formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.94))} /km`,
-      color: 'border-rose-500/40 bg-rose-950/20 text-rose-300',
       dot: 'bg-rose-500',
-      desc: 'Intervalos intensos de 2 a 5 minutos. Eleva techo aeróbico.'
+      desc: 'Intervalos intensos de 2 a 5 minutos. Eleva el techo aeróbico.'
     }
   ];
 }
 
 // ============================================================================
-// DATOS INICIALES POR DEFECTO
+// DATOS POR DEFECTO Y PLANTILLAS MULTI-CORREDOR
 // ============================================================================
 
 function createDefaultState() {
@@ -417,7 +555,7 @@ function createDefaultState() {
 
   return {
     profile: {
-      name: 'Corredor RunPulse',
+      name: 'Carlos (Media Maratón)',
       age: 31,
       weight: 68.5,
       height: 175,
@@ -457,6 +595,24 @@ function createDefaultState() {
         notes: 'Carrera preparatoria para medir umbral.'
       }
     ],
+    reminders: [
+      {
+        id: 'rem-1',
+        title: 'Sesión de Running del Día',
+        time: '18:00',
+        daysMode: 'training_days',
+        enabled: true
+      },
+      {
+        id: 'rem-2',
+        title: 'Hidratación pre-entreno y movilidad de tobillos',
+        time: '17:15',
+        daysMode: 'training_days',
+        enabled: true
+      }
+    ],
+    favoriteFacts: ['fact-1', 'fact-3'],
+    customFacts: [],
     workouts: [
       {
         id: 'w-prev-1',
@@ -477,7 +633,7 @@ function createDefaultState() {
         actualElevation: 45,
         actualCalories: 510,
         actualRpe: 4,
-        watchAnalysis: 'Zonas FC: 84% en Z2, 16% en Z3. Parciales muy regulares entre 5:08 y 5:14/km.',
+        watchAnalysis: 'Zonas FC: 84% en Z2, 16% en Z3. Parciales regulares entre 5:08 y 5:14/km.',
         notes: 'Sensaciones muy fluidas, respiración cómoda.',
         screenshots: []
       },
@@ -500,7 +656,7 @@ function createDefaultState() {
         actualElevation: 15,
         actualCalories: 640,
         actualRpe: 8,
-        watchAnalysis: '5x1000m en: 4:16, 4:15, 4:13, 4:14, 4:11. Training Effect Aeróbico 4.1 / Anaeróbico 3.2.',
+        watchAnalysis: '5x1000m en: 4:16, 4:15, 4:13, 4:14, 4:11. Training Effect Aeróbico 4.1.',
         notes: 'Última serie exigente pero manteniendo cadencia alta.',
         screenshots: []
       },
@@ -546,34 +702,34 @@ function createDefaultState() {
         actualElevation: 120,
         actualCalories: 1050,
         actualRpe: 6,
-        watchAnalysis: 'Bloque inicial 13km a 5:12/km (147 ppm) + cierre 3.5km a 4:48/km (164 ppm). Baja deriva cardíaca.',
-        notes: 'Últimos 3 km a 4:50 sintiéndome fuerte.',
+        watchAnalysis: 'Bloque inicial 13km a 5:12/km + cierre 3.5km a 4:48/km. Baja deriva cardíaca.',
+        notes: 'Últimos 3 km sintiéndome fuerte.',
         screenshots: []
       },
       {
         id: 'w-curr-1',
         date: dayISO(0),
-        type: 'rest',
-        title: 'Descanso Activo y Movilidad',
-        status: 'completed',
-        plannedKm: 0,
-        plannedMin: 20,
-        plannedPace: '--:--',
-        plannedZone: 'Recuperación',
+        type: 'easy',
+        title: 'Rodaje Base Aeróbica Z2 + Movilidad',
+        status: 'planned',
+        plannedKm: 8.0,
+        plannedMin: 42,
+        plannedPace: '05:15',
+        plannedZone: 'Z2 (140-154 ppm)',
         actualKm: 0,
-        actualMin: 20,
-        actualPace: '--:--',
+        actualMin: 0,
+        actualPace: '',
         actualHR: 0,
-        actualRpe: 2,
+        actualRpe: 4,
         watchAnalysis: '',
-        notes: 'Rodillo de espuma y estiramientos.',
+        notes: 'Mantener pulsaciones controladas y cadencia ligera.',
         screenshots: []
       },
       {
         id: 'w-curr-2',
         date: dayISO(1),
         type: 'easy',
-        title: 'Rodaje Base Aeróbica Z2',
+        title: 'Rodaje Aeróbico Constante',
         status: 'completed',
         plannedKm: 8.5,
         plannedMin: 44,
@@ -611,7 +767,7 @@ function createDefaultState() {
         actualElevation: 65,
         actualCalories: 515,
         actualRpe: 8,
-        watchAnalysis: 'Deriva cardíaca alta a partir del km 4 (subió a 179 ppm a 4:40/km por humedad/calor).',
+        watchAnalysis: 'Deriva cardíaca alta a partir del km 4 por humedad y calor.',
         notes: 'Recorté 2 km del bloque Tempo porque sentí pesadez muscular y calor.',
         screenshots: []
       },
@@ -631,7 +787,7 @@ function createDefaultState() {
         actualHR: 0,
         actualRpe: 5,
         watchAnalysis: '',
-        notes: 'Sentadilla búlgara, elevación de talones excéntrica, planchas.',
+        notes: 'Sentadilla búlgara, elevación de talones para sóleo y planchas.',
         screenshots: []
       },
       {
@@ -695,46 +851,300 @@ function createDefaultState() {
     coachFeedback: {
       lastUpdated: getLocalISODate(0),
       summary:
-        'Detecto que en la sesión de Tempo del miércoles recortaste 2 km con un RPE de 8/10 y pulsaciones altas por calor. Puedes subir los pantallazos de tu reloj en cada sesión para que analice tus parciales y zonas de FC antes de reajustar el plan.',
+        'En tu última sesión de Tempo recortaste 2 km con RPE 8/10 por calor. He ajustado las recomendaciones del día para priorizar hidratación y mantener tu próximo rodaje estrictamente en Zona 2.',
       recommendations: [
-        'Mantener el rodaje del sábado estrictamente en Zona 1-2 (<148 ppm).',
-        'Sube la captura de tus intervalos o tirada larga desde el botón "Subir Captura Reloj" para extraer automáticamente tus splits.'
+        'Mantener el próximo rodaje suave por debajo de 150 ppm.',
+        'Realizar ejercicios excéntricos de sóleo en la sesión de fuerza.'
+      ]
+    }
+  };
+}
+
+function createSecondDemoRunnerState() {
+  const monday = getMondayOfWeek(0);
+  const dayISO = (offsetFromMonday) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + offsetFromMonday);
+    return formatDateISO(d);
+  };
+
+  return {
+    profile: {
+      name: 'Laura (10K & Salud)',
+      age: 28,
+      weight: 58.0,
+      height: 165,
+      restHR: 56,
+      maxHR: 192,
+      lthr: 174,
+      vo2max: 44.0,
+      cadence: 172,
+      experience: 'principiante',
+      daysAvailable: 4,
+      longRunDay: 'Sábado',
+      pr5k: '26:15',
+      pr10k: '54:30',
+      pr21k: '',
+      pr42k: '',
+      terrain: 'Parque arbolado y pista',
+      shoes: 'Asics Novablast 4',
+      injuries: 'Evitar aumentos bruscos de kilometraje semanal (>10% por semana).'
+    },
+    goals: [
+      {
+        id: 'goal-laura-1',
+        name: '10K Sub 50 Minutos',
+        distanceKm: 10.0,
+        date: getLocalISODate(45),
+        targetTime: '49:59',
+        priority: 'A',
+        notes: 'Mantener ritmo constante de 5:00 min/km.'
+      }
+    ],
+    reminders: [
+      {
+        id: 'rem-laura-1',
+        title: 'Entrenamiento matutino 10K',
+        time: '07:00',
+        daysMode: 'training_days',
+        enabled: true
+      }
+    ],
+    favoriteFacts: ['fact-2', 'fact-7'],
+    customFacts: [],
+    workouts: [
+      {
+        id: 'wl-1',
+        date: dayISO(-2),
+        type: 'easy',
+        title: 'Rodaje Cómodo Conversacional Z2',
+        status: 'completed',
+        plannedKm: 5.0,
+        plannedMin: 30,
+        plannedPace: '06:00',
+        plannedZone: 'Z2',
+        actualKm: 5.2,
+        actualMin: 30.5,
+        actualPace: '05:52',
+        actualHR: 148,
+        actualMaxHR: 158,
+        actualCadence: 172,
+        actualElevation: 25,
+        actualCalories: 310,
+        actualRpe: 4,
+        watchAnalysis: '90% en Zona 2 aeróbica. Sensación muy cómoda.',
+        notes: 'Muy motivada y sin molestias.',
+        screenshots: []
+      },
+      {
+        id: 'wl-2',
+        date: dayISO(0),
+        type: 'fartlek',
+        title: 'Fartlek 6x (2 min alegre Z3 + 2 min suave Z2)',
+        status: 'planned',
+        plannedKm: 6.0,
+        plannedMin: 35,
+        plannedPace: '05:35',
+        plannedZone: 'Z2-Z3',
+        actualKm: 0,
+        actualMin: 0,
+        actualPace: '',
+        actualHR: 0,
+        actualRpe: 5,
+        watchAnalysis: '',
+        notes: 'Disfrutar los cambios de ritmo sin llegar al agotamiento.',
+        screenshots: []
+      },
+      {
+        id: 'wl-3',
+        date: dayISO(2),
+        type: 'easy',
+        title: 'Rodaje Suave + Técnica de Carrera',
+        status: 'planned',
+        plannedKm: 5.0,
+        plannedMin: 30,
+        plannedPace: '06:00',
+        plannedZone: 'Z2',
+        actualKm: 0,
+        actualMin: 0,
+        actualPace: '',
+        actualHR: 0,
+        actualRpe: 4,
+        watchAnalysis: '',
+        notes: 'Enfocarse en postura alta y cadencia.',
+        screenshots: []
+      },
+      {
+        id: 'wl-4',
+        date: dayISO(5),
+        type: 'long',
+        title: 'Fondo Suave de Sábado 9 km',
+        status: 'planned',
+        plannedKm: 9.0,
+        plannedMin: 54,
+        plannedPace: '06:00',
+        plannedZone: 'Z2',
+        actualKm: 0,
+        actualMin: 0,
+        actualPace: '',
+        actualHR: 0,
+        actualRpe: 5,
+        watchAnalysis: '',
+        notes: 'Correr en compañía a ritmo conversacional.',
+        screenshots: []
+      }
+    ],
+    coachFeedback: {
+      lastUpdated: getLocalISODate(0),
+      summary: 'Excelente constancia en tus rodajes suaves. Tu eficiencia aeróbica está mejorando semana a semana rumbo a tu meta de 10K.',
+      recommendations: [
+        'En el Fartlek de hoy concéntrate en soltar los hombros y respirar profundo.',
+        'Mantén el fondo del sábado en ritmo conversacional.'
       ]
     }
   };
 }
 
 // ============================================================================
-// PERSISTENCIA Y CARGA DE ESTADO
+// GESTIÓN MULTI-USUARIO LOCAL, PERSISTENCIA Y TEMA VISUAL
 // ============================================================================
 
-function loadState() {
+function ensureUserStateIntegrity(stateObj) {
+  if (!stateObj.reminders) {
+    stateObj.reminders = [
+      {
+        id: `rem-${Date.now()}`,
+        title: 'Entrenamiento del Día',
+        time: '18:00',
+        daysMode: 'training_days',
+        enabled: true
+      }
+    ];
+  }
+  if (!Array.isArray(stateObj.favoriteFacts)) stateObj.favoriteFacts = ['fact-1'];
+  if (!Array.isArray(stateObj.customFacts)) stateObj.customFacts = [];
+  if (!Array.isArray(stateObj.workouts)) stateObj.workouts = [];
+  if (!Array.isArray(stateObj.goals)) stateObj.goals = [];
+  return stateObj;
+}
+
+function createInitialMultiStore() {
+  // Verificar si existen datos previos de la versión v1 para migrarlos sin pérdida
+  let firstUserState = createDefaultState();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      appState = JSON.parse(raw);
-    } else {
-      appState = createDefaultState();
-      saveState();
+    const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacyRaw) {
+      const parsedLegacy = JSON.parse(legacyRaw);
+      if (parsedLegacy && parsedLegacy.profile && Array.isArray(parsedLegacy.workouts)) {
+        firstUserState = ensureUserStateIntegrity(parsedLegacy);
+      }
     }
   } catch (e) {
-    console.error('Error cargando estado local:', e);
-    appState = createDefaultState();
+    console.warn('No se pudo migrar estado previo:', e);
   }
+
+  return {
+    activeUserId: 'user-1',
+    users: [
+      {
+        id: 'user-1',
+        color: '#059669',
+        createdAt: getLocalISODate(0),
+        state: ensureUserStateIntegrity(firstUserState)
+      },
+      {
+        id: 'user-2',
+        color: '#0284c7',
+        createdAt: getLocalISODate(0),
+        state: ensureUserStateIntegrity(createSecondDemoRunnerState())
+      }
+    ]
+  };
+}
+
+function loadState() {
+  // Cargar tema visual (Claro por defecto)
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+  applyTheme(savedTheme);
+
+  try {
+    const raw = localStorage.getItem(MULTI_USER_STORAGE_KEY);
+    if (raw) {
+      multiStore = JSON.parse(raw);
+      if (!multiStore || !Array.isArray(multiStore.users) || multiStore.users.length === 0) {
+        multiStore = createInitialMultiStore();
+      }
+    } else {
+      multiStore = createInitialMultiStore();
+    }
+  } catch (e) {
+    console.error('Error cargando multi-usuario:', e);
+    multiStore = createInitialMultiStore();
+  }
+
+  const activeUser = getActiveUserEntry();
+  appState = ensureUserStateIntegrity(activeUser.state);
+  saveState();
 
   const savedKey = localStorage.getItem(GEMINI_KEY_STORAGE);
   if (savedKey) {
     const input = document.getElementById('geminiApiKeyInput');
     if (input) input.value = savedKey;
   }
+
+  // Seleccionar dato curioso del día según la fecha actual
+  const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  const allFacts = getAllAvailableFacts();
+  currentCuriousFactIndex = dayOfYear % allFacts.length;
+}
+
+function getActiveUserEntry() {
+  let found = multiStore.users.find((u) => u.id === multiStore.activeUserId);
+  if (!found) {
+    found = multiStore.users[0];
+    multiStore.activeUserId = found.id;
+  }
+  return found;
 }
 
 function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    const activeUser = getActiveUserEntry();
+    if (activeUser && appState) {
+      activeUser.state = appState;
+    }
+    localStorage.setItem(MULTI_USER_STORAGE_KEY, JSON.stringify(multiStore));
+    // Mantener sincronizada también la llave v1 para compatibilidad total
+    if (appState) {
+      localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(appState));
+    }
   } catch (e) {
     console.error('Error guardando estado:', e);
-    showToast('Aviso: Almacenamiento local lleno. Exporta un respaldo JSON o elimina capturas antiguas.');
+    showToast('Aviso: Almacenamiento local lleno. Exporta un respaldo JSON.');
+  }
+}
+
+function applyTheme(theme) {
+  const htmlEl = document.documentElement;
+  const iconEl = document.getElementById('themeToggleIcon');
+  if (theme === 'dark') {
+    htmlEl.classList.add('dark');
+    if (iconEl) iconEl.setAttribute('data-lucide', 'sun');
+  } else {
+    htmlEl.classList.remove('dark');
+    if (iconEl) iconEl.setAttribute('data-lucide', 'moon');
+  }
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  if (window.lucide) lucide.createIcons();
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.contains('dark');
+  applyTheme(isDark ? 'light' : 'dark');
+  renderDashboardCharts();
+  if (!document.getElementById('tab-physiology')?.classList.contains('hidden')) {
+    updatePhysiologyRadar();
+    renderIntensityPolarizationChart();
   }
 }
 
@@ -752,7 +1162,920 @@ function showToast(message) {
 }
 
 // ============================================================================
-// NAVEGACIÓN ENTRE PESTAÑAS
+// MODAL Y GESTIÓN DE MÚLTIPLES CORREDORES LOCALES
+// ============================================================================
+
+function openUsersModal() {
+  renderUsersModalList();
+  const modal = document.getElementById('usersModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeUsersModal() {
+  const modal = document.getElementById('usersModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function renderUsersModalList() {
+  const container = document.getElementById('usersListContainer');
+  if (!container) return;
+
+  container.innerHTML = multiStore.users
+    .map((u) => {
+      const isActive = u.id === multiStore.activeUserId;
+      const p = u.state.profile || {};
+      const vdot = getRunnerVDOT(p).toFixed(1);
+      const completedCount = (u.state.workouts || []).filter(
+        (w) => w.status === 'completed' || w.status === 'modified'
+      ).length;
+      const initial = (p.name || 'C').trim().charAt(0).toUpperCase();
+
+      return `
+        <div class="p-4 rounded-xl border transition flex items-center justify-between gap-3 ${
+          isActive
+            ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/25'
+            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
+        }">
+          <div class="flex items-center gap-3 min-w-0 cursor-pointer flex-1" onclick="switchActiveRunner('${u.id}')">
+            <div class="w-10 h-10 rounded-xl text-white font-display font-bold flex items-center justify-center shrink-0 shadow-sm" style="background-color: ${u.color || '#059669'}">
+              ${initial}
+            </div>
+            <div class="truncate">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-sm text-slate-900 dark:text-white truncate">${p.name || 'Corredor'}</span>
+                ${
+                  isActive
+                    ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">Activo</span>`
+                    : ''
+                }
+              </div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                VDOT ${vdot} · ${completedCount} sesiones · Nivel ${p.experience || 'intermedio'}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0">
+            ${
+              !isActive
+                ? `<button onclick="switchActiveRunner('${u.id}')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-600 hover:text-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition">
+                    Elegir
+                  </button>`
+                : ''
+            }
+            ${
+              multiStore.users.length > 1
+                ? `<button onclick="deleteRunnerProfile('${u.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition" title="Eliminar perfil">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>`
+                : ''
+            }
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function switchActiveRunner(userId) {
+  const target = multiStore.users.find((u) => u.id === userId);
+  if (!target) return;
+  multiStore.activeUserId = userId;
+  appState = ensureUserStateIntegrity(target.state);
+  saveState();
+  closeUsersModal();
+  refreshAllViews();
+  showToast(`Perfil activo: ${appState.profile.name}`);
+}
+
+function createNewRunnerProfile() {
+  const name = document.getElementById('newRunnerName').value.trim();
+  if (!name) return;
+  const level = document.getElementById('newRunnerLevel').value;
+  const color = document.getElementById('newRunnerColor').value || '#059669';
+  const age = Number(document.getElementById('newRunnerAge').value) || 30;
+  const pr5kRaw = document.getElementById('newRunnerPr5k').value.trim();
+  const seedWorkouts = document.getElementById('newRunnerSeedWorkouts').checked;
+
+  const monday = getMondayOfWeek(0);
+  const dayISO = (offset) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + offset);
+    return formatDateISO(d);
+  };
+
+  const basePace = level === 'principiante' ? '06:10' : level === 'avanzado' ? '04:45' : '05:20';
+  const starterWorkouts = seedWorkouts
+    ? [
+        {
+          id: `w-${Date.now()}-1`,
+          date: dayISO(0),
+          type: 'easy',
+          title: 'Rodaje Suave Conversacional Z2',
+          status: 'planned',
+          plannedKm: level === 'principiante' ? 5.0 : 8.0,
+          plannedMin: level === 'principiante' ? 31 : 43,
+          plannedPace: basePace,
+          plannedZone: 'Z2',
+          actualKm: 0,
+          actualMin: 0,
+          actualPace: '',
+          actualHR: 0,
+          actualRpe: 4,
+          watchAnalysis: '',
+          notes: 'Sesión de bienvenida para calibrar pulsaciones.',
+          screenshots: []
+        },
+        {
+          id: `w-${Date.now()}-2`,
+          date: dayISO(2),
+          type: 'fartlek',
+          title: 'Fartlek Controlado por Sensaciones',
+          status: 'planned',
+          plannedKm: level === 'principiante' ? 5.0 : 8.5,
+          plannedMin: 35,
+          plannedPace: basePace,
+          plannedZone: 'Z2-Z3',
+          actualKm: 0,
+          actualMin: 0,
+          actualPace: '',
+          actualHR: 0,
+          actualRpe: 6,
+          watchAnalysis: '',
+          notes: 'Alternar 2 min alegres con 2 min suaves.',
+          screenshots: []
+        },
+        {
+          id: `w-${Date.now()}-3`,
+          date: dayISO(5),
+          type: 'long',
+          title: 'Tirada Larga de Fin de Semana',
+          status: 'planned',
+          plannedKm: level === 'principiante' ? 7.0 : 14.0,
+          plannedMin: level === 'principiante' ? 45 : 75,
+          plannedPace: basePace,
+          plannedZone: 'Z2',
+          actualKm: 0,
+          actualMin: 0,
+          actualPace: '',
+          actualHR: 0,
+          actualRpe: 5,
+          watchAnalysis: '',
+          notes: 'Mantener ritmo cómodo de principio a fin.',
+          screenshots: []
+        }
+      ]
+    : [];
+
+  const newUserId = `user-${Date.now()}`;
+  const newUserObj = {
+    id: newUserId,
+    color,
+    createdAt: getLocalISODate(0),
+    state: ensureUserStateIntegrity({
+      profile: {
+        name,
+        age,
+        weight: 68,
+        height: 170,
+        restHR: 55,
+        maxHR: 220 - age,
+        lthr: Math.round((220 - age) * 0.88),
+        vo2max: level === 'principiante' ? 41 : level === 'avanzado' ? 54 : 47,
+        cadence: 172,
+        experience: level,
+        daysAvailable: level === 'principiante' ? 3 : 5,
+        longRunDay: 'Domingo',
+        pr5k: pr5kRaw.includes(':') ? pr5kRaw : '',
+        pr10k: '',
+        pr21k: '',
+        pr42k: '',
+        terrain: 'Asfalto y parque',
+        shoes: 'Zapatilla de entrenamiento diario',
+        injuries: ''
+      },
+      goals: [
+        {
+          id: `goal-${Date.now()}`,
+          name: level === 'principiante' ? 'Completar 5K / 10K Sintiéndome Fuerte' : 'Mejorar Marca Personal en 10K / 21K',
+          distanceKm: 10.0,
+          date: getLocalISODate(60),
+          targetTime: level === 'principiante' ? '55:00' : '46:00',
+          priority: 'A',
+          notes: 'Objetivo inicial personalizado.'
+        }
+      ],
+      reminders: [
+        {
+          id: `rem-${Date.now()}`,
+          title: `Entrenamiento de ${name}`,
+          time: '18:00',
+          daysMode: 'training_days',
+          enabled: true
+        }
+      ],
+      favoriteFacts: ['fact-3'],
+      customFacts: [],
+      workouts: starterWorkouts,
+      coachFeedback: {
+        lastUpdated: getLocalISODate(0),
+        summary: `¡Bienvenido/a ${name}! Tu perfil local está listo. Registra tus sesiones o sube capturas de tu reloj para recibir recomendaciones diarias adaptadas a ti.`,
+        recommendations: [
+          'Completa tus mejores marcas o pulsaciones en la pestaña "Mi Perfil & Zonas".',
+          'Revisa tu Recomendación Diaria antes de salir a correr.'
+        ]
+      }
+    })
+  };
+
+  multiStore.users.push(newUserObj);
+  multiStore.activeUserId = newUserId;
+  appState = newUserObj.state;
+  saveState();
+
+  document.getElementById('newRunnerName').value = '';
+  document.getElementById('newRunnerPr5k').value = '';
+  closeUsersModal();
+  refreshAllViews();
+  showToast(`¡Perfil de ${name} creado y activado!`);
+}
+
+function deleteRunnerProfile(userId) {
+  if (multiStore.users.length <= 1) {
+    showToast('Debe existir al menos un perfil activo en la aplicación.');
+    return;
+  }
+  const target = multiStore.users.find((u) => u.id === userId);
+  if (!target) return;
+  if (!confirm(`¿Seguro que deseas eliminar el perfil de "${target.state.profile.name}" y sus entrenamientos?`)) {
+    return;
+  }
+  multiStore.users = multiStore.users.filter((u) => u.id !== userId);
+  if (multiStore.activeUserId === userId) {
+    multiStore.activeUserId = multiStore.users[0].id;
+    appState = ensureUserStateIntegrity(multiStore.users[0].state);
+  }
+  saveState();
+  renderUsersModalList();
+  refreshAllViews();
+  showToast('Perfil eliminado');
+}
+
+function refreshAllViews() {
+  renderDashboard();
+  renderCalendarAndTable();
+  renderProfileTab();
+  renderGoalsTab();
+  renderCoachFeedbackBox();
+  renderFactsLibraryGrid();
+}
+
+// ============================================================================
+// MOTOR DE RECOMENDACIONES DIARIAS SEGÚN EL PROGRESO REGISTRADO
+// ============================================================================
+
+function computeDailyAdaptiveRecommendations() {
+  const p = appState.profile || {};
+  const todayISO = getLocalISODate(0);
+  const vdot = getRunnerVDOT(p);
+  const zones = getTrainingZones(p);
+  const z2Info = zones[1];
+
+  // Sesiones recientes completadas o modificadas
+  const completed = [...appState.workouts]
+    .filter((w) => w.status === 'completed' || w.status === 'modified')
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const recentLast5 = completed.slice(-5);
+  const avgRecentRpe =
+    recentLast5.length > 0
+      ? recentLast5.reduce((s, w) => s + Number(w.actualRpe || 5), 0) / recentLast5.length
+      : 5.0;
+
+  const recentModified = recentLast5.filter((w) => w.status === 'modified' || Number(w.actualRpe) >= 8);
+  const todayWorkout = appState.workouts.find((w) => w.date === todayISO);
+
+  // Cálculo de polarización 80/20
+  let easyKm = 0;
+  let hardKm = 0;
+  completed.forEach((w) => {
+    const k = Number(w.actualKm) || 0;
+    if (w.type === 'easy' || w.type === 'long') easyKm += k;
+    else hardKm += k;
+  });
+  const totalKm = easyKm + hardKm || 1;
+  const easyPct = Math.round((easyKm / totalKm) * 100);
+
+  // Calcular puntaje de Disposición Diaria (Readiness 0-100%)
+  let readinessScore = 88;
+  if (avgRecentRpe >= 7.5) readinessScore -= 16;
+  else if (avgRecentRpe >= 6.5) readinessScore -= 7;
+  else if (avgRecentRpe <= 4.5) readinessScore += 6;
+  if (recentModified.length > 0) readinessScore -= 6;
+  readinessScore = Math.max(52, Math.min(98, Math.round(readinessScore)));
+
+  // 1. Tarjeta: Plan de Hoy
+  let pillar1Title = 'Sesión Sugerida para Hoy';
+  let pillar1Text = '';
+  let pillar1Badge = 'Día Activo';
+
+  if (todayWorkout) {
+    const tCat = WORKOUT_TYPES_CATALOG[todayWorkout.type] || WORKOUT_TYPES_CATALOG.easy;
+    pillar1Badge = tCat.shortName;
+    if (todayWorkout.status === 'completed' || todayWorkout.status === 'modified') {
+      pillar1Title = '¡Entrenamiento de Hoy Completado!';
+      pillar1Text = `Ya registraste "${todayWorkout.title}" (${todayWorkout.actualKm || 0} km). Prioriza ahora estirar suave y reponer líquidos.`;
+    } else if (todayWorkout.type === 'rest') {
+      pillar1Title = 'Hoy Toca Descanso y Supercompensación';
+      pillar1Text = `Tienes programado "${todayWorkout.title}". Aprovecha para hacer 10-15 min de movilidad articular o rodillo de espuma.`;
+    } else {
+      pillar1Title = `Hoy: ${todayWorkout.title}`;
+      pillar1Text = `Objetivo: ${todayWorkout.plannedKm || 0} km a ritmo ${todayWorkout.plannedPace || z2Info.paceRange} (${todayWorkout.plannedZone || tCat.zone}). Beneficio: ${tCat.primaryBenefit}.`;
+    }
+  } else {
+    pillar1Badge = 'Sugerencia IA';
+    pillar1Title = 'Sin Sesión Fija Hoy · Rodaje o Movilidad';
+    pillar1Text = `Si deseas salir hoy, te sugiero 30-40 min de Rodaje Regenerativo en Zona 2 (${z2Info.hrRange}, ritmo ${z2Info.paceRange}) sin acumular fatiga.`;
+  }
+
+  // 2. Tarjeta: Ajuste por Carga y Fatiga Reciente
+  let pillar2Title = 'Lectura de tu Fatiga y Progreso';
+  let pillar2Text = '';
+  let pillar2Badge = `RPE medio: ${avgRecentRpe.toFixed(1)}/10`;
+
+  if (recentModified.length > 0) {
+    const lastMod = recentModified[recentModified.length - 1];
+    pillar2Text = `En "${lastMod.title}" registraste un esfuerzo alto (RPE ${lastMod.actualRpe}/10). Hoy evita picarte con el ritmo los primeros 15 minutos y vigila que tus pulsaciones no suban más de lo previsto.`;
+  } else if (easyPct < 70 && completed.length >= 3) {
+    pillar2Text = `Actualmente el ${easyPct}% de tus kilómetros son suaves (meta ideal: ~80%). Te recomendamos que tu próximo rodaje sea genuinamente suave en Zona 1-2 para asimilar las series.`;
+  } else {
+    pillar2Text = `Tu asimilación de carga es excelente (${easyPct}% volumen aeróbico suave y RPE controlado). Estás en condiciones óptimas para sostener los ritmos de tu VDOT (${vdot.toFixed(1)}).`;
+  }
+
+  // 3. Tarjeta: Prevención Biomecánica
+  let pillar3Title = 'Cuidado Muscular y Biomecánica';
+  let pillar3Badge = `Cadencia obj: ${p.cadence || 174} spm`;
+  let pillar3Text = p.injuries
+    ? `Recordatorio personal: "${p.injuries}". Dedica 4 minutos antes de correr a activar tobillos, glúteo medio y sóleos.`
+    : `Mantén una cadencia ágil cercana a ${p.cadence || 174} pasos/min aterrizando debajo de tu centro de gravedad para proteger rodillas y tendón de Aquiles.`;
+
+  // 4. Tarjeta: Hidratación y Recuperación
+  const plannedMinutesToday = todayWorkout ? Number(todayWorkout.plannedMin) || 40 : 40;
+  let pillar4Title = 'Nutrición e Hidratación de Hoy';
+  let pillar4Badge = plannedMinutesToday >= 65 ? 'Sesión Larga' : 'Hidratación Base';
+  let pillar4Text =
+    plannedMinutesToday >= 65
+      ? `Al superar los 60 min hoy, bebe ~400-600 ml de agua con electrolitos por hora y consume 30-45g de carbohidratos desde el minuto 40.`
+      : `Bebe 350 ml de agua 45 min antes de entrenar. Al terminar, combina carbohidratos y ~20-25g de proteína en la primera hora para reparar fibras.`;
+
+  return {
+    readinessScore,
+    cards: [
+      {
+        icon: 'footprints',
+        colorClass: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10',
+        badge: pillar1Badge,
+        title: pillar1Title,
+        text: pillar1Text
+      },
+      {
+        icon: 'activity',
+        colorClass: 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10',
+        badge: pillar2Badge,
+        title: pillar2Title,
+        text: pillar2Text
+      },
+      {
+        icon: 'shield-check',
+        colorClass: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10',
+        badge: pillar3Badge,
+        title: pillar3Title,
+        text: pillar3Text
+      },
+      {
+        icon: 'droplets',
+        colorClass: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10',
+        badge: pillar4Badge,
+        title: pillar4Title,
+        text: pillar4Text
+      }
+    ]
+  };
+}
+
+function renderDailyRecommendations() {
+  const grid = document.getElementById('dailyRecommendationGrid');
+  const scoreBadge = document.getElementById('dailyReadinessScoreBadge');
+  if (!grid) return;
+
+  const data = computeDailyAdaptiveRecommendations();
+  if (scoreBadge) {
+    scoreBadge.textContent = `Disposición hoy: ${data.readinessScore}%`;
+  }
+
+  grid.innerHTML = data.cards
+    .map(
+      (c) => `
+      <div class="rp-subtle-box p-4 flex flex-col justify-between space-y-2.5">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="p-1.5 rounded-lg ${c.colorClass}">
+              <i data-lucide="${c.icon}" class="w-4 h-4"></i>
+            </span>
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              ${c.badge}
+            </span>
+          </div>
+          <h4 class="font-display font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug">
+            ${c.title}
+          </h4>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            ${c.text}
+          </p>
+        </div>
+      </div>
+    `
+    )
+    .join('');
+}
+
+// ============================================================================
+// SISTEMA DE RECORDATORIOS DE ENTRENAMIENTO & EXPORTACIÓN .ICS AL CALENDARIO
+// ============================================================================
+
+function renderTodayReminderBanner() {
+  const banner = document.getElementById('todayReminderBanner');
+  const badgeCount = document.getElementById('reminderBadgeCount');
+  if (!banner) return;
+
+  const todayISO = getLocalISODate(0);
+  const todayWorkout = appState.workouts.find((w) => w.date === todayISO && w.status === 'planned');
+  const activeReminders = (appState.reminders || []).filter((r) => r.enabled);
+  const mainTime = activeReminders.length > 0 ? activeReminders[0].time : '18:00';
+
+  if (badgeCount) {
+    if (todayWorkout || activeReminders.length > 0) {
+      badgeCount.textContent = todayWorkout ? '!' : String(activeReminders.length);
+      badgeCount.classList.remove('hidden');
+      badgeCount.classList.add('flex');
+    } else {
+      badgeCount.classList.add('hidden');
+    }
+  }
+
+  if (todayWorkout) {
+    banner.innerHTML = `
+      <div class="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+        <i data-lucide="bell-ring" class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0"></i>
+        <span>
+          <strong>Recordatorio de hoy (${mainTime}):</strong> Tienes programado <em>"${todayWorkout.title}"</em> (${todayWorkout.plannedKm || 0} km).
+        </span>
+      </div>
+      <div class="flex items-center gap-1.5 ml-auto">
+        <button onclick="openWorkoutModal('${todayWorkout.id}')" class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-[11px] transition">
+          Registrar ahora
+        </button>
+        <button onclick="openRemindersModal()" class="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-[11px] border border-amber-300/60 dark:border-slate-700">
+          Ajustar hora
+        </button>
+      </div>
+    `;
+  } else {
+    banner.innerHTML = `
+      <div class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+        <i data-lucide="clock" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+        <span>
+          <strong>Recordatorios activos (${activeReminders.length}):</strong> Próximo aviso programado a las <strong>${mainTime}</strong>.
+        </span>
+      </div>
+      <button onclick="openRemindersModal()" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-[11px] border border-slate-200 dark:border-slate-700 hover:border-emerald-500 transition">
+        Configurar avisos
+      </button>
+    `;
+  }
+}
+
+function openRemindersModal() {
+  renderRemindersList();
+  updateNotificationPermissionBadge();
+  const modal = document.getElementById('remindersModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeRemindersModal() {
+  const modal = document.getElementById('remindersModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function updateNotificationPermissionBadge() {
+  const badge = document.getElementById('notifPermissionStatusBadge');
+  if (!badge) return;
+  if (!('Notification' in window)) {
+    badge.textContent = 'Alertas internas activas';
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    badge.textContent = 'Permiso concedido ✓';
+    badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold';
+  } else if (Notification.permission === 'denied') {
+    badge.textContent = 'Alerta en pantalla + sonido';
+  } else {
+    badge.textContent = 'Listo para activar';
+  }
+}
+
+async function requestNotificationPermission() {
+  playReminderChime();
+  if (!('Notification' in window)) {
+    showToast('Avisos sonoros y visuales activados dentro de la aplicación.');
+    return;
+  }
+  try {
+    const perm = await Notification.requestPermission();
+    updateNotificationPermissionBadge();
+    if (perm === 'granted') {
+      showToast('¡Notificaciones del sistema activadas correctamente!');
+    } else {
+      showToast('Usaremos alertas visuales y sonoras dentro de la app.');
+    }
+  } catch (_) {
+    showToast('Avisos internos activados.');
+  }
+}
+
+function triggerTestReminderNotification() {
+  playReminderChime();
+  const todayISO = getLocalISODate(0);
+  const todayW = appState.workouts.find((w) => w.date === todayISO);
+  const bodyMsg = todayW
+    ? `Hoy tienes programado: ${todayW.title} (${todayW.plannedKm || 0} km a ${todayW.plannedPace || 'ritmo Z2'}).`
+    : `¡Es hora de revisar tu entrenamiento del día en RunPulse, ${appState.profile.name}!`;
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('🏃‍♂️ Recordatorio RunPulse Coach', { body: bodyMsg });
+  }
+  showToast(`🔔 ${bodyMsg}`);
+}
+
+function renderRemindersList() {
+  const container = document.getElementById('remindersListContainer');
+  if (!container) return;
+
+  const daysLabels = {
+    training_days: 'Días con entreno planeado',
+    everyday: 'Todos los días',
+    weekdays: 'Lunes a Viernes',
+    weekends: 'Fines de semana'
+  };
+
+  if (!appState.reminders || appState.reminders.length === 0) {
+    container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No tienes recordatorios configurados. Agrega uno arriba.</div>`;
+    return;
+  }
+
+  container.innerHTML = appState.reminders
+    .map(
+      (r) => `
+      <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" ${r.enabled ? 'checked' : ''} onchange="toggleReminderEnabled('${r.id}')" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
+          <div>
+            <div class="text-xs font-bold text-slate-900 dark:text-white ${!r.enabled ? 'line-through opacity-50' : ''}">${r.title}</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">
+              Hora: <strong class="text-emerald-600 dark:text-emerald-400">${r.time}</strong> · ${daysLabels[r.daysMode] || 'Todos los días'}
+            </div>
+          </div>
+        </div>
+        <button onclick="deleteReminder('${r.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 transition" title="Eliminar recordatorio">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `
+    )
+    .join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function addCustomReminder() {
+  const title = document.getElementById('newReminderTitle').value.trim();
+  const time = document.getElementById('newReminderTime').value || '18:00';
+  const daysMode = document.getElementById('newReminderDays').value;
+  if (!title) return;
+
+  appState.reminders.push({
+    id: `rem-${Date.now()}`,
+    title,
+    time,
+    daysMode,
+    enabled: true
+  });
+  saveState();
+  document.getElementById('newReminderTitle').value = '';
+  renderRemindersList();
+  renderTodayReminderBanner();
+  showToast('Recordatorio guardado');
+}
+
+function toggleReminderEnabled(remId) {
+  const item = appState.reminders.find((r) => r.id === remId);
+  if (!item) return;
+  item.enabled = !item.enabled;
+  saveState();
+  renderRemindersList();
+  renderTodayReminderBanner();
+}
+
+function deleteReminder(remId) {
+  appState.reminders = appState.reminders.filter((r) => r.id !== remId);
+  saveState();
+  renderRemindersList();
+  renderTodayReminderBanner();
+}
+
+function startBackgroundReminderWatcher() {
+  if (reminderCheckInterval) clearInterval(reminderCheckInterval);
+  let lastTriggeredMinute = '';
+
+  reminderCheckInterval = setInterval(() => {
+    if (!appState || !Array.isArray(appState.reminders)) return;
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    if (hhmm === lastTriggeredMinute) return;
+
+    const dayOfWeek = now.getDay(); // 0 Dom .. 6 Sáb
+    const todayISO = getLocalISODate(0);
+    const hasPlannedWorkoutToday = appState.workouts.some(
+      (w) => w.date === todayISO && w.status === 'planned' && w.type !== 'rest'
+    );
+
+    appState.reminders.forEach((r) => {
+      if (!r.enabled || r.time !== hhmm) return;
+      let shouldFire = true;
+      if (r.daysMode === 'training_days') shouldFire = hasPlannedWorkoutToday;
+      else if (r.daysMode === 'weekdays') shouldFire = dayOfWeek >= 1 && dayOfWeek <= 5;
+      else if (r.daysMode === 'weekends') shouldFire = dayOfWeek === 0 || dayOfWeek === 6;
+
+      if (shouldFire) {
+        lastTriggeredMinute = hhmm;
+        playReminderChime();
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(`🔔 Recordatorio RunPulse (${appState.profile.name})`, {
+            body: r.title
+          });
+        }
+        showToast(`🔔 Recordatorio (${r.time}): ${r.title}`);
+      }
+    });
+  }, 20000);
+}
+
+// Exportador universal de entrenamientos a archivo .ICS (Google Calendar, iOS, Outlook)
+function exportCurrentWeekToICS() {
+  const monday = getMondayOfWeek(currentWeekOffset);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const monISO = formatDateISO(monday);
+  const sunISO = formatDateISO(sunday);
+
+  const weekWorkouts = appState.workouts.filter(
+    (w) => w.date >= monISO && w.date <= sunISO && w.type !== 'rest'
+  );
+
+  if (weekWorkouts.length === 0) {
+    showToast('No hay sesiones de entrenamiento en esta semana para exportar.');
+    return;
+  }
+
+  const prefTime =
+    appState.reminders && appState.reminders.length > 0
+      ? appState.reminders[0].time.replace(':', '')
+      : '1800';
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//RunPulse AI Coach//ES',
+    'CALSCALE:GREGORIAN'
+  ];
+
+  weekWorkouts.forEach((w) => {
+    const cleanDate = w.date.replace(/-/g, '');
+    const startDateTime = `${cleanDate}T${prefTime}00`;
+    const durationMin = Number(w.plannedMin) || 45;
+    const tCat = WORKOUT_TYPES_CATALOG[w.type] || WORKOUT_TYPES_CATALOG.easy;
+    const desc = `Corredor: ${appState.profile.name} | Meta: ${w.plannedKm || 0} km a ${w.plannedPace || '--'}/km (${w.plannedZone || tCat.zone}). Beneficio: ${tCat.primaryBenefit}. ${w.notes || ''}`;
+
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:${w.id}@runpulse.local`,
+      `DTSTART:${startDateTime}`,
+      `DURATION:PT${durationMin}M`,
+      `SUMMARY:🏃 ${w.title} (${w.plannedKm || 0}km)`,
+      `DESCRIPTION:${desc.replace(/\n/g, ' ')}`,
+      'BEGIN:VALARM',
+      'TRIGGER:-PT30M',
+      'ACTION:DISPLAY',
+      `DESCRIPTION:Recordatorio RunPulse: ${w.title}`,
+      'END:VALARM',
+      'END:VEVENT'
+    );
+  });
+
+  lines.push('END:VCALENDAR');
+
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `entrenamientos-runpulse-${monISO}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Archivo .ICS descargado. Ábrelo para añadir los recordatorios a tu calendario.');
+}
+
+// ============================================================================
+// DATOS CURIOSOS DEL RUNNING (WIDGET DIARIO, FAVORITOS Y BIBLIOTECA)
+// ============================================================================
+
+function getAllAvailableFacts() {
+  const custom = Array.isArray(appState?.customFacts) ? appState.customFacts : [];
+  return [...custom, ...DEFAULT_RUNNING_FACTS];
+}
+
+function renderDashboardCuriousFact() {
+  const allFacts = getAllAvailableFacts();
+  if (allFacts.length === 0) return;
+  if (currentCuriousFactIndex >= allFacts.length) currentCuriousFactIndex = 0;
+
+  const item = allFacts[currentCuriousFactIndex];
+  const catEl = document.getElementById('curiousFactCategoryBadge');
+  const titleEl = document.getElementById('curiousFactTitle');
+  const bodyEl = document.getElementById('curiousFactBody');
+  const tipEl = document.getElementById('curiousFactTip');
+  const countEl = document.getElementById('totalFactsCountLabel');
+  const favBtn = document.getElementById('btnFavoriteFact');
+
+  if (catEl) catEl.textContent = item.category;
+  if (titleEl) titleEl.textContent = item.title;
+  if (bodyEl) bodyEl.textContent = item.fact;
+  if (tipEl) tipEl.textContent = item.tip;
+  if (countEl) countEl.textContent = String(allFacts.length);
+
+  const isFav = (appState.favoriteFacts || []).includes(item.id);
+  if (favBtn) {
+    favBtn.className = isFav
+      ? 'p-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/20 text-amber-500 transition'
+      : 'p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-amber-500 transition';
+  }
+}
+
+function nextCuriousFact() {
+  const allFacts = getAllAvailableFacts();
+  currentCuriousFactIndex = (currentCuriousFactIndex + 1) % allFacts.length;
+  renderDashboardCuriousFact();
+}
+
+function toggleFavoriteCurrentFact() {
+  const allFacts = getAllAvailableFacts();
+  const item = allFacts[currentCuriousFactIndex];
+  if (!item) return;
+  toggleFavoriteFactById(item.id);
+}
+
+function toggleFavoriteFactById(factId) {
+  if (!Array.isArray(appState.favoriteFacts)) appState.favoriteFacts = [];
+  const idx = appState.favoriteFacts.indexOf(factId);
+  if (idx >= 0) {
+    appState.favoriteFacts.splice(idx, 1);
+    showToast('Dato curioso quitado de favoritos');
+  } else {
+    appState.favoriteFacts.push(factId);
+    showToast('⭐ Dato curioso guardado en tus favoritos');
+  }
+  saveState();
+  renderDashboardCuriousFact();
+  renderFactsLibraryGrid();
+}
+
+function renderFactsLibraryGrid() {
+  const grid = document.getElementById('factsLibraryGrid');
+  if (!grid) return;
+
+  const filterVal = document.getElementById('factsCategoryFilter')?.value || 'all';
+  const allFacts = getAllAvailableFacts();
+  const favs = appState.favoriteFacts || [];
+
+  const filtered = allFacts.filter((f) => {
+    if (filterVal === 'all') return true;
+    if (filterVal === 'favorites') return favs.includes(f.id);
+    return f.category === filterVal;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="col-span-full p-6 text-center text-xs text-slate-400">No hay datos curiosos en este filtro todavía.</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered
+    .map((f) => {
+      const isFav = favs.includes(f.id);
+      return `
+        <div class="rp-subtle-box p-4 flex flex-col justify-between space-y-3">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300">
+                ${f.category}
+              </span>
+              <button onclick="toggleFavoriteFactById('${f.id}')" class="text-xs ${isFav ? 'text-amber-500 font-bold' : 'text-slate-400 hover:text-amber-500'}">
+                ${isFav ? '★ Favorito' : '☆ Guardar'}
+              </button>
+            </div>
+            <h4 class="font-display font-bold text-sm text-slate-900 dark:text-white leading-snug">
+              ${f.title}
+            </h4>
+            <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              ${f.fact}
+            </p>
+          </div>
+          <div class="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300">
+            <strong class="text-emerald-600 dark:text-emerald-400">Consejo práctico:</strong> ${f.tip}
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+async function generateAIFactWithGemini() {
+  const apiKey =
+    document.getElementById('geminiApiKeyInput')?.value.trim() ||
+    localStorage.getItem(GEMINI_KEY_STORAGE) ||
+    '';
+
+  if (!apiKey) {
+    showToast('Configura tu Gemini API Key en la pestaña "Entrenador Gemini IA" para generar curiosidades nuevas con IA.');
+    return;
+  }
+
+  const btn = document.getElementById('btnGenerateAiFact');
+  if (btn) btn.textContent = 'Generando...';
+
+  try {
+    const prompt = `Genera 1 dato curioso fascinante, científico y poco conocido sobre el running (fisiología, biomecánica, nutrición o récords) adaptado a un corredor de nivel ${appState.profile.experience}. Devuelve SOLO un objeto JSON con: {"category": "Fisiología | Biomecánica | Nutrición | Entrenamiento | Historia", "title": "Título llamativo", "fact": "Explicación científica clara en 2 oraciones", "tip": "Consejo práctico de 1 oración"}.`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, responseMimeType: 'application/json' }
+      })
+    });
+    const data = await response.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    if (parsed && parsed.title) {
+      const newFact = {
+        id: `fact-ai-${Date.now()}`,
+        category: parsed.category || 'Fisiología',
+        title: parsed.title,
+        fact: parsed.fact,
+        tip: parsed.tip
+      };
+      if (!Array.isArray(appState.customFacts)) appState.customFacts = [];
+      appState.customFacts.unshift(newFact);
+      currentCuriousFactIndex = 0;
+      saveState();
+      renderDashboardCuriousFact();
+      renderFactsLibraryGrid();
+      showToast('¡Nuevo dato curioso generado y añadido a tu biblioteca!');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('No se pudo conectar con Gemini API en este momento.');
+  } finally {
+    if (btn) btn.innerHTML = `<i data-lucide="bot" class="w-3.5 h-3.5"></i> Nuevo dato con IA`;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+// ============================================================================
+// NAVEGACIÓN ENTRE PESTAÑAS (ESCRITORIO Y BARRA INFERIOR MÓVIL)
 // ============================================================================
 
 function switchTab(tabId) {
@@ -762,11 +2085,17 @@ function switchTab(tabId) {
   document.querySelectorAll('.nav-tab').forEach((btn) => {
     btn.classList.remove('active');
   });
+  document.querySelectorAll('.mobile-nav-btn').forEach((btn) => {
+    btn.classList.remove('active');
+  });
 
   const targetPanel = document.getElementById(`tab-${tabId}`);
   const targetBtn = document.getElementById(`tabBtn-${tabId}`);
+  const mobBtn = document.getElementById(`mobTab-${tabId}`);
+
   if (targetPanel) targetPanel.classList.remove('hidden');
   if (targetBtn) targetBtn.classList.add('active');
+  if (mobBtn) mobBtn.classList.add('active');
 
   if (tabId === 'dashboard') {
     renderDashboard();
@@ -782,11 +2111,6 @@ function switchTab(tabId) {
     renderGeminiTab();
   }
   if (window.lucide) lucide.createIcons();
-}
-
-function openGeminiModal() {
-  switchTab('gemini');
-  generateGeminiPrompt('adjust');
 }
 
 // ============================================================================
@@ -835,10 +2159,9 @@ async function handleWatchScreenshotsUpload(event) {
 
   event.target.value = '';
   renderModalScreenshotsGallery();
-  showToast(`${files.length} captura(s) cargada(s). Pulsa "Extraer Datos con Gemini IA" para leerlas.`);
+  showToast(`${files.length} captura(s) adjuntada(s).`);
 }
 
-// Soporte para pegar pantallazos directamente con Ctrl+V cuando el modal está abierto
 window.addEventListener('paste', async (event) => {
   const modal = document.getElementById('workoutModal');
   if (!modal || modal.classList.contains('hidden')) return;
@@ -858,7 +2181,7 @@ window.addEventListener('paste', async (event) => {
     });
   }
   renderModalScreenshotsGallery();
-  showToast('Captura pegada desde el portapapeles. Puedes extraer sus datos con Gemini IA.');
+  showToast('Captura pegada desde el portapapeles.');
 });
 
 function renderModalScreenshotsGallery() {
@@ -867,8 +2190,8 @@ function renderModalScreenshotsGallery() {
 
   if (currentModalScreenshots.length === 0) {
     gallery.innerHTML = `
-      <div class="col-span-full py-3 px-4 rounded-xl border border-dashed border-slate-800 text-center text-[11px] text-slate-400">
-        No hay capturas adjuntas en esta sesión. Sube imágenes de la pantalla de tu reloj o de la app (Garmin, Strava, Coros, Apple Fitness, Huawei, Polar) o presiona <strong>Ctrl+V</strong>.
+      <div class="col-span-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-[11px] text-slate-400">
+        Sin capturas adjuntas. Sube imágenes de tu reloj o presiona <strong>Ctrl+V</strong>.
       </div>
     `;
     return;
@@ -877,12 +2200,11 @@ function renderModalScreenshotsGallery() {
   gallery.innerHTML = currentModalScreenshots
     .map(
       (img, index) => `
-      <div class="relative group rounded-xl overflow-hidden border border-slate-700 bg-slate-950 h-28 flex items-center justify-center">
-        <img src="${img.dataUrl}" alt="${img.name}" onclick="openImageLightbox('${img.dataUrl}')" class="w-full h-full object-cover cursor-zoom-in group-hover:opacity-90 transition" />
-        <button type="button" onclick="removeModalScreenshot(${index})" class="absolute top-1.5 right-1.5 p-1 rounded-lg bg-slate-950/85 text-rose-400 hover:bg-rose-500 hover:text-white transition" title="Eliminar captura">
+      <div class="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-950 h-24 flex items-center justify-center">
+        <img src="${img.dataUrl}" alt="${img.name}" onclick="openImageLightbox('${img.dataUrl}')" class="w-full h-full object-cover cursor-zoom-in" />
+        <button type="button" onclick="removeModalScreenshot(${index})" class="absolute top-1.5 right-1.5 p-1 rounded-lg bg-slate-900/80 text-rose-400 hover:bg-rose-600 hover:text-white transition">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
         </button>
-        <span class="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded bg-slate-950/80 text-[10px] text-slate-300">Captura ${index + 1}</span>
       </div>
     `
     )
@@ -920,7 +2242,6 @@ function openWorkoutScreenshotGalleryById(workoutId) {
   }
 }
 
-// Analizador Multimodal Gemini Vision: lee las capturas del reloj y autocompleta el entrenamiento
 async function analyzeWatchScreenshotsWithGemini() {
   const statusEl = document.getElementById('wmVisionStatus');
   const apiKey =
@@ -929,57 +2250,46 @@ async function analyzeWatchScreenshotsWithGemini() {
     '';
 
   if (currentModalScreenshots.length === 0) {
-    statusEl.className = 'text-xs p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 block';
-    statusEl.textContent = 'Primero sube o pega (Ctrl+V) al menos una captura de pantalla de tu reloj o aplicación deportiva.';
+    statusEl.className = 'text-xs p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 text-amber-700 dark:text-amber-300 block';
+    statusEl.textContent = 'Primero sube o pega (Ctrl+V) al menos una captura de tu reloj o app.';
     return;
   }
 
   if (!apiKey) {
-    statusEl.className = 'text-xs p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 block';
-    statusEl.textContent = 'Para leer automáticamente las imágenes necesitas configurar tu Gemini API Key en la pestaña "Centro Gemini AI". (Las imágenes igual se guardarán en tu sesión si pulsas Guardar).';
+    statusEl.className = 'text-xs p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 text-rose-700 dark:text-rose-300 block';
+    statusEl.textContent = 'Configura tu Gemini API Key en la pestaña "Entrenador Gemini IA" para leer imágenes automáticamente.';
     return;
   }
 
-  const imageParts = currentModalScreenshots.map((img) => {
-    const base64Data = img.dataUrl.split(',')[1];
-    return {
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: base64Data
-      }
-    };
-  });
+  const imageParts = currentModalScreenshots.map((img) => ({
+    inlineData: {
+      mimeType: 'image/jpeg',
+      data: img.dataUrl.split(',')[1]
+    }
+  }));
 
-  const visionPrompt = `Analiza estas capturas de pantalla de mi reloj deportivo / app de running (Garmin, Coros, Strava, Apple Fitness, Polar, Huawei Health, Samsung, etc.).
-Extrae con máxima precisión todos los datos visibles del entrenamiento y devuelve EXCLUSIVAMENTE un objeto JSON válido con esta estructura:
+  const visionPrompt = `Analiza estas capturas de reloj deportivo / app de running. Devuelve EXCLUSIVAMENTE un JSON con:
 {
-  "titleSuggested": "Nombre descriptivo de la sesión si no tiene uno (ej. Rodaje Aeróbico o Series en Pista)",
+  "titleSuggested": "Nombre descriptivo",
   "workoutTypeSuggested": "easy | tempo | intervals | long | fartlek | hills | strength | race",
-  "dateSuggested": "YYYY-MM-DD si aparece en la captura o vacío",
-  "actualKm": 10.02,
-  "actualMin": 51.4,
-  "actualPace": "05:08",
+  "actualKm": 10.0,
+  "actualMin": 51.0,
+  "actualPace": "05:06",
   "actualHR": 152,
   "actualMaxHR": 174,
   "actualCadence": 176,
   "actualElevation": 85,
   "actualCalories": 610,
   "estimatedRpe": 6,
-  "watchAnalysis": "Resumen claro y estructurado en español de: 1) Parciales/Splits por km o vueltas, 2) Distribución en Zonas de Frecuencia Cardíaca, 3) Training Effect / Carga / Potencia / Cadencia y 4) Qué indica fisiológicamente sobre cómo fue el entrenamiento (ej. si hubo deriva cardíaca, si el ritmo fue constante o progresivo)."
+  "watchAnalysis": "Resumen claro en español de parciales, zonas de FC y análisis fisiológico."
 }`;
 
-  const fallbackModels = [
-    document.getElementById('geminiModelSelect')?.value || 'gemini-3-flash-preview',
-    'gemini-3-flash-preview',
-    'gemini-3.1-pro-preview',
-    'gemini-2.5-flash'
-  ].filter((m, idx, arr) => arr.indexOf(m) === idx);
-
+  const fallbackModels = ['gemini-2.5-flash', 'gemini-3-flash-preview'];
   let lastError = null;
 
   for (const model of fallbackModels) {
-    statusEl.className = 'text-xs p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 block';
-    statusEl.textContent = `Escaneando ${currentModalScreenshots.length} captura(s) del reloj con ${model}...`;
+    statusEl.className = 'text-xs p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 text-indigo-700 dark:text-indigo-300 block';
+    statusEl.textContent = `Analizando captura(s) con ${model}...`;
 
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -987,33 +2297,16 @@ Extrae con máxima precisión todos los datos visibles del entrenamiento y devue
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: visionPrompt }, ...imageParts]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: 'application/json'
-          }
+          contents: [{ parts: [{ text: visionPrompt }, ...imageParts] }],
+          generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
         })
       });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        const errMsg = errData?.error?.message || `HTTP ${response.status}`;
-        lastError = new Error(errMsg);
-        if (response.status === 404 || response.status === 400 || response.status === 429 || errMsg.includes('no longer available')) {
-          continue;
-        }
-        throw lastError;
-      }
-
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim());
 
-      // Autocompletar campos del modal con lo leído de las capturas
       if (parsed.actualKm) document.getElementById('wmActualKm').value = parsed.actualKm;
       if (parsed.actualMin) document.getElementById('wmActualMin').value = parsed.actualMin;
       if (parsed.actualPace) document.getElementById('wmActualPace').value = parsed.actualPace;
@@ -1026,9 +2319,7 @@ Extrae con máxima precisión todos los datos visibles del entrenamiento y devue
         document.getElementById('wmActualRpe').value = parsed.estimatedRpe;
         document.getElementById('wmRpeValueLabel').textContent = parsed.estimatedRpe;
       }
-      if (parsed.watchAnalysis) {
-        document.getElementById('wmWatchAnalysis').value = parsed.watchAnalysis;
-      }
+      if (parsed.watchAnalysis) document.getElementById('wmWatchAnalysis').value = parsed.watchAnalysis;
       if (!document.getElementById('wmTitle').value && parsed.titleSuggested) {
         document.getElementById('wmTitle').value = parsed.titleSuggested;
       }
@@ -1038,26 +2329,51 @@ Extrae con máxima precisión todos los datos visibles del entrenamiento y devue
       }
       document.getElementById('wmStatus').value = 'completed';
 
-      statusEl.className = 'text-xs p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 block';
-      statusEl.textContent = '¡Datos del reloj extraídos con éxito! Revisa los campos autocompletados abajo y pulsa "Guardar Sesión y Capturas".';
+      statusEl.className = 'text-xs p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 text-emerald-700 dark:text-emerald-300 block';
+      statusEl.textContent = '¡Datos del reloj extraídos con éxito! Revisa y pulsa Guardar.';
       return;
     } catch (err) {
       lastError = err;
     }
   }
 
-  statusEl.className = 'text-xs p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 block';
-  statusEl.textContent = `No se pudo leer la imagen con la API: ${lastError ? lastError.message : 'Error desconocido'}`;
+  statusEl.className = 'text-xs p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 text-rose-700 dark:text-rose-300 block';
+  statusEl.textContent = `No se pudo leer la imagen: ${lastError ? lastError.message : 'Error'}`;
 }
 
 // ============================================================================
-// RENDERIZADO: CABECERA Y DASHBOARD PRINCIPAL
+// RENDERIZADO: CABECERA, SALUDO MULTI-USUARIO Y DASHBOARD
 // ============================================================================
 
-function updateHeaderBadges() {
-  const vdot = getRunnerVDOT(appState.profile);
+function updateHeaderAndWelcomeBadges() {
+  const activeEntry = getActiveUserEntry();
+  const p = appState.profile || {};
+  const vdot = getRunnerVDOT(p);
+  const initial = (p.name || 'C').trim().charAt(0).toUpperCase();
+  const avatarColor = activeEntry.color || '#059669';
+
   const vdotEl = document.getElementById('headerVdotValue');
   if (vdotEl) vdotEl.textContent = vdot.toFixed(1);
+
+  const nameEl = document.getElementById('headerUserName');
+  if (nameEl) nameEl.textContent = p.name || 'Corredor';
+
+  const avatarEl = document.getElementById('headerUserAvatar');
+  if (avatarEl) {
+    avatarEl.textContent = initial;
+    avatarEl.style.backgroundColor = avatarColor;
+  }
+
+  const welcomeAvatar = document.getElementById('welcomeAvatarBox');
+  if (welcomeAvatar) {
+    welcomeAvatar.textContent = initial;
+    welcomeAvatar.style.backgroundColor = avatarColor;
+  }
+
+  const welcomeTitle = document.getElementById('welcomeUserTitle');
+  if (welcomeTitle) {
+    welcomeTitle.textContent = `¡Hola, ${p.name || 'Corredor'}!`;
+  }
 
   const monday = getMondayOfWeek(0);
   const sunday = new Date(monday);
@@ -1065,9 +2381,7 @@ function updateHeaderBadges() {
   const monISO = formatDateISO(monday);
   const sunISO = formatDateISO(sunday);
 
-  const weekWorkouts = appState.workouts.filter(
-    (w) => w.date >= monISO && w.date <= sunISO
-  );
+  const weekWorkouts = appState.workouts.filter((w) => w.date >= monISO && w.date <= sunISO);
   const plannedKm = weekWorkouts.reduce((acc, w) => acc + (Number(w.plannedKm) || 0), 0);
   const actualKm = weekWorkouts
     .filter((w) => w.status === 'completed' || w.status === 'modified')
@@ -1079,7 +2393,10 @@ function updateHeaderBadges() {
 }
 
 function renderDashboard() {
-  updateHeaderBadges();
+  updateHeaderAndWelcomeBadges();
+  renderTodayReminderBanner();
+  renderDailyRecommendations();
+  renderDashboardCuriousFact();
 
   const monday = getMondayOfWeek(0);
   const sunday = new Date(monday);
@@ -1087,9 +2404,7 @@ function renderDashboard() {
   const monISO = formatDateISO(monday);
   const sunISO = formatDateISO(sunday);
 
-  const weekWorkouts = appState.workouts.filter(
-    (w) => w.date >= monISO && w.date <= sunISO
-  );
+  const weekWorkouts = appState.workouts.filter((w) => w.date >= monISO && w.date <= sunISO);
   const plannedKm = weekWorkouts.reduce((acc, w) => acc + (Number(w.plannedKm) || 0), 0);
   const actualKm = weekWorkouts
     .filter((w) => w.status === 'completed' || w.status === 'modified')
@@ -1114,22 +2429,25 @@ function renderDashboard() {
       runsWithHR.length > 0
         ? Math.round(runsWithHR.reduce((s, w) => s + Number(w.actualHR), 0) / runsWithHR.length)
         : '--';
-    document.getElementById('kpiAvgHrText').innerHTML = `FC Media: <span class="text-slate-200 font-medium">${avgHR} ppm</span> (${completedRuns.length} sesiones)`;
+    document.getElementById('kpiAvgHrText').innerHTML = `FC Media: <span class="text-slate-900 dark:text-white font-semibold">${avgHR} ppm</span> (${completedRuns.length} sesiones)`;
 
     const avgRpe =
       completedRuns.reduce((s, w) => s + Number(w.actualRpe || 5), 0) / completedRuns.length;
-    document.getElementById('kpiAvgRpe').textContent = `(RPE prom: ${avgRpe.toFixed(1)}/10)`;
+    document.getElementById('kpiAvgRpe').textContent = `(RPE ${avgRpe.toFixed(1)}/10)`;
     const readinessEl = document.getElementById('kpiReadinessState');
     if (avgRpe >= 7.8) {
-      readinessEl.textContent = 'Carga Alta / Precaución';
-      readinessEl.className = 'text-lg font-display font-bold text-amber-400';
+      readinessEl.textContent = 'Carga Alta';
+      readinessEl.className = 'text-base sm:text-lg font-display font-bold text-amber-600 dark:text-amber-400';
     } else if (avgRpe <= 4.5) {
-      readinessEl.textContent = 'Fresco / Alta Energía';
-      readinessEl.className = 'text-lg font-display font-bold text-sky-400';
+      readinessEl.textContent = 'Fresco / Energía';
+      readinessEl.className = 'text-base sm:text-lg font-display font-bold text-sky-600 dark:text-sky-400';
     } else {
       readinessEl.textContent = 'Asimilación Óptima';
-      readinessEl.className = 'text-lg font-display font-bold text-emerald-400';
+      readinessEl.className = 'text-base sm:text-lg font-display font-bold text-emerald-600 dark:text-emerald-400';
     }
+  } else {
+    document.getElementById('kpiAvgPace').textContent = '--:--';
+    document.getElementById('kpiAvgHrText').textContent = 'Sin sesiones registradas aún';
   }
 
   const sortedGoals = [...appState.goals].sort((a, b) => a.date.localeCompare(b.date));
@@ -1142,11 +2460,15 @@ function renderDashboard() {
         ? formatSecondsToTime(targetSec / nextGoal.distanceKm)
         : '--:--';
     document.getElementById('kpiNextGoalMeta').textContent = `Meta: ${nextGoal.targetTime} (${goalPace} /km)`;
-    const diffDays = Math.ceil(
-      (new Date(nextGoal.date) - new Date()) / (1000 * 60 * 60 * 24)
-    );
+    const diffDays = Math.ceil((new Date(nextGoal.date) - new Date()) / (1000 * 60 * 60 * 24));
     document.getElementById('kpiNextGoalCountdown').textContent =
-      diffDays >= 0 ? `Faltan ${diffDays} días (${formatShortSpanishDate(nextGoal.date)})` : `Evento completado (${formatShortSpanishDate(nextGoal.date)})`;
+      diffDays >= 0
+        ? `Faltan ${diffDays} días (${formatShortSpanishDate(nextGoal.date)})`
+        : `Evento finalizado (${formatShortSpanishDate(nextGoal.date)})`;
+  } else {
+    document.getElementById('kpiNextGoalTitle').textContent = 'Sin objetivo activo';
+    document.getElementById('kpiNextGoalMeta').textContent = 'Agrega tu carrera meta';
+    document.getElementById('kpiNextGoalCountdown').textContent = '--';
   }
 
   const todayISO = getLocalISODate(0);
@@ -1155,8 +2477,7 @@ function renderDashboard() {
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const nextWorkout =
-    upcoming[0] ||
-    [...appState.workouts].sort((a, b) => b.date.localeCompare(a.date))[0];
+    upcoming[0] || [...appState.workouts].sort((a, b) => b.date.localeCompare(a.date))[0];
 
   const nextContainer = document.getElementById('nextWorkoutCardContent');
   if (nextWorkout && nextContainer) {
@@ -1165,25 +2486,27 @@ function renderDashboard() {
     nextContainer.innerHTML = `
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="space-y-2">
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border ${typeInfo.badgeClass}">${typeInfo.name}</span>
-            <span class="text-xs text-slate-400">Zona sugerida: <strong class="text-slate-200">${nextWorkout.plannedZone || typeInfo.zone}</strong></span>
+            <span class="text-xs text-slate-500 dark:text-slate-400">Zona: <strong class="text-slate-800 dark:text-slate-200">${nextWorkout.plannedZone || typeInfo.zone}</strong></span>
           </div>
-          <h4 class="text-xl font-display font-bold text-white">${nextWorkout.title}</h4>
-          <p class="text-xs text-slate-300"><strong class="text-emerald-400">¿Qué mejora hoy?:</strong> ${typeInfo.primaryBenefit}</p>
-          ${nextWorkout.notes ? `<p class="text-xs text-slate-400 italic">"${nextWorkout.notes}"</p>` : ''}
+          <h4 class="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-white">${nextWorkout.title}</h4>
+          <p class="text-xs text-slate-600 dark:text-slate-300"><strong class="text-emerald-600 dark:text-emerald-400">¿Qué mejora?:</strong> ${typeInfo.primaryBenefit}</p>
+          ${nextWorkout.notes ? `<p class="text-xs text-slate-500 dark:text-slate-400 italic">"${nextWorkout.notes}"</p>` : ''}
         </div>
-        <div class="flex sm:flex-col items-end justify-between gap-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800 min-w-[205px]">
-          <div class="text-right">
-            <div class="text-2xl font-display font-bold text-white">${nextWorkout.plannedKm || 0} <span class="text-xs font-normal text-slate-400">km</span></div>
-            <div class="text-xs text-sky-400">Ritmo obj: ${nextWorkout.plannedPace || '--:--'} /km</div>
+        <div class="flex sm:flex-col items-center sm:items-end justify-between gap-3 rp-subtle-box p-4 min-w-[195px]">
+          <div class="sm:text-right">
+            <div class="text-2xl font-display font-bold text-slate-900 dark:text-white">${nextWorkout.plannedKm || 0} <span class="text-xs font-normal text-slate-500">km</span></div>
+            <div class="text-xs font-semibold text-sky-600 dark:text-sky-400">Ritmo: ${nextWorkout.plannedPace || '--:--'} /km</div>
           </div>
-          <button onclick="openWorkoutModal('${nextWorkout.id}')" class="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 w-full justify-center">
-            <i data-lucide="watch" class="w-3.5 h-3.5"></i> Registrar / Subir Reloj
+          <button onclick="openWorkoutModal('${nextWorkout.id}')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 w-full justify-center shadow-sm transition">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Registrar Sesión
           </button>
         </div>
       </div>
     `;
+  } else if (nextContainer) {
+    nextContainer.innerHTML = `<div class="p-4 text-xs text-slate-500">No tienes entrenamientos programados. Pulsa "Registrar Entreno" arriba para crear el primero.</div>`;
   }
 
   const modifiedOrHard = appState.workouts.filter(
@@ -1198,18 +2521,18 @@ function renderDashboard() {
       const latest = modifiedOrHard[modifiedOrHard.length - 1];
       alertBox.innerHTML = `
         <div class="flex items-start gap-2">
-          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+          <i data-lucide="alert-circle" class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"></i>
           <div>
-            <span class="font-semibold text-amber-300">Ajuste recomendado detectado:</span>
-            En <em>"${latest.title}"</em> (${formatShortSpanishDate(latest.date)}) se registró estado <strong>${latest.status}</strong> (${latest.actualKm || 0}km de ${latest.plannedKm || 0}km, RPE ${latest.actualRpe || '-'}/10). Sincroniza con Gemini para recalibrar las próximas cargas.
+            <span class="font-bold text-amber-700 dark:text-amber-300">Nota del Entrenador:</span>
+            En <em>"${latest.title}"</em> (${formatShortSpanishDate(latest.date)}) registraste RPE ${latest.actualRpe || '-'}/10 (${latest.actualKm || 0}km de ${latest.plannedKm || 0}km). Tus recomendaciones diarias ya fueron ajustadas.
           </div>
         </div>
       `;
     } else {
       alertBox.innerHTML = `
-        <div class="flex items-center gap-2 text-emerald-300">
+        <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-medium">
           <i data-lucide="check-circle-2" class="w-4 h-4 shrink-0"></i>
-          <span>Tus entrenamientos van alineados al plan. Puedes pedirle a Gemini la progresión de la próxima semana.</span>
+          <span>Tus entrenamientos van al día y sin alertas de fatiga excesiva.</span>
         </div>
       `;
     }
@@ -1219,7 +2542,17 @@ function renderDashboard() {
   if (window.lucide) lucide.createIcons();
 }
 
+function getChartThemeColors() {
+  const isDark = document.documentElement.classList.contains('dark');
+  return {
+    textColor: isDark ? '#cbd5e1' : '#475569',
+    mutedColor: isDark ? '#94a3b8' : '#64748b',
+    gridColor: isDark ? 'rgba(51, 65, 85, 0.35)' : 'rgba(226, 232, 240, 0.8)'
+  };
+}
+
 function renderDashboardCharts() {
+  const colors = getChartThemeColors();
   const sorted = [...appState.workouts]
     .filter((w) => w.type !== 'rest' && (Number(w.plannedKm) > 0 || Number(w.actualKm) > 0))
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -1240,18 +2573,18 @@ function renderDashboardCharts() {
         labels,
         datasets: [
           {
-            label: 'Km Planeados (Gemini)',
+            label: 'Km Planeados',
             data: plannedData,
-            backgroundColor: 'rgba(56, 189, 248, 0.35)',
-            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(2, 132, 199, 0.25)',
+            borderColor: '#0284c7',
             borderWidth: 1.5,
             borderRadius: 6
           },
           {
-            label: 'Km Completados (Reloj)',
+            label: 'Km Completados',
             data: actualData,
-            backgroundColor: 'rgba(16, 185, 129, 0.75)',
-            borderColor: '#10b981',
+            backgroundColor: 'rgba(5, 150, 105, 0.8)',
+            borderColor: '#059669',
             borderWidth: 1.5,
             borderRadius: 6
           }
@@ -1261,11 +2594,11 @@ function renderDashboardCharts() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: '#cbd5e1', font: { size: 11 } } }
+          legend: { labels: { color: colors.textColor, font: { size: 11 } } }
         },
         scales: {
-          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(51,65,85,0.2)' } },
-          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(51,65,85,0.3)' } }
+          x: { ticks: { color: colors.mutedColor, font: { size: 10 } }, grid: { color: colors.gridColor } },
+          y: { ticks: { color: colors.mutedColor, font: { size: 10 } }, grid: { color: colors.gridColor } }
         }
       }
     });
@@ -1297,8 +2630,8 @@ function renderDashboardCharts() {
           {
             label: 'Ritmo Real (min/km)',
             data: paceDecimal,
-            borderColor: '#38bdf8',
-            backgroundColor: 'rgba(56, 189, 248, 0.15)',
+            borderColor: '#0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.12)',
             yAxisID: 'yPace',
             tension: 0.3,
             fill: true,
@@ -1307,8 +2640,8 @@ function renderDashboardCharts() {
           {
             label: 'FC Media (ppm)',
             data: hrValues,
-            borderColor: '#f43f5e',
-            backgroundColor: 'rgba(244, 63, 94, 0.1)',
+            borderColor: '#e11d48',
+            backgroundColor: 'rgba(225, 29, 72, 0.1)',
             yAxisID: 'yHR',
             tension: 0.3,
             borderDash: [4, 4],
@@ -1320,7 +2653,7 @@ function renderDashboardCharts() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: '#cbd5e1', font: { size: 11 } } },
+          legend: { labels: { color: colors.textColor, font: { size: 11 } } },
           tooltip: {
             callbacks: {
               label: function (ctx) {
@@ -1333,22 +2666,22 @@ function renderDashboardCharts() {
           }
         },
         scales: {
-          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(51,65,85,0.2)' } },
+          x: { ticks: { color: colors.mutedColor, font: { size: 10 } }, grid: { color: colors.gridColor } },
           yPace: {
             type: 'linear',
             position: 'left',
             reverse: true,
             ticks: {
-              color: '#38bdf8',
+              color: '#0284c7',
               font: { size: 10 },
               callback: (val) => decimalMinutesToPaceString(val)
             },
-            grid: { color: 'rgba(51,65,85,0.3)' }
+            grid: { color: colors.gridColor }
           },
           yHR: {
             type: 'linear',
             position: 'right',
-            ticks: { color: '#f43f5e', font: { size: 10 } },
+            ticks: { color: '#e11d48', font: { size: 10 } },
             grid: { drawOnChartArea: false }
           }
         }
@@ -1362,11 +2695,8 @@ function renderDashboardCharts() {
 // ============================================================================
 
 function changeWeekOffset(delta) {
-  if (delta === 0) {
-    currentWeekOffset = 0;
-  } else {
-    currentWeekOffset += delta;
-  }
+  if (delta === 0) currentWeekOffset = 0;
+  else currentWeekOffset += delta;
   renderCalendarAndTable();
 }
 
@@ -1394,44 +2724,42 @@ function renderCalendarAndTable() {
       const dayWorkouts = appState.workouts.filter((w) => w.date === iso);
 
       html += `
-        <div class="rounded-2xl p-3.5 border flex flex-col justify-between min-h-[210px] transition ${
-          isToday
-            ? 'bg-slate-900 border-emerald-500/60 shadow-lg shadow-emerald-500/5'
-            : 'bg-slate-900/70 border-slate-800/90'
+        <div class="rp-card p-3.5 flex flex-col justify-between min-h-[195px] ${
+          isToday ? 'ring-2 ring-emerald-500/70' : ''
         }">
           <div>
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2.5">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 mb-2.5">
               <div>
-                <div class="text-xs font-bold ${isToday ? 'text-emerald-400' : 'text-slate-200'}">${dayNames[i]}</div>
+                <div class="text-xs font-bold ${isToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}">${dayNames[i]}</div>
                 <div class="text-[11px] text-slate-400">${d.getDate()}/${d.getMonth() + 1}</div>
               </div>
-              <button onclick="openWorkoutModal(null, '${iso}')" class="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-emerald-400" title="Agregar sesión este día">
+              <button onclick="openWorkoutModal(null, '${iso}')" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-600" title="Agregar sesión este día">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
               </button>
             </div>
             <div class="space-y-2">
               ${
                 dayWorkouts.length === 0
-                  ? `<div class="text-[11px] text-slate-500 py-6 text-center italic">Sin sesión asignada</div>`
+                  ? `<div class="text-[11px] text-slate-400 py-6 text-center italic">Día libre</div>`
                   : dayWorkouts
                       .map((w) => {
                         const t = WORKOUT_TYPES_CATALOG[w.type] || WORKOUT_TYPES_CATALOG.easy;
                         const hasShots = Array.isArray(w.screenshots) && w.screenshots.length > 0;
-                        const statusColor =
+                        const statusBorder =
                           w.status === 'completed'
-                            ? 'border-l-4 border-l-emerald-400'
+                            ? 'border-l-4 border-l-emerald-500'
                             : w.status === 'modified'
-                            ? 'border-l-4 border-l-amber-400'
+                            ? 'border-l-4 border-l-amber-500'
                             : w.status === 'skipped'
                             ? 'border-l-4 border-l-rose-500 opacity-60'
-                            : 'border-l-4 border-l-sky-400';
+                            : 'border-l-4 border-l-sky-500';
 
                         return `
-                          <div onclick="openWorkoutModal('${w.id}')" class="p-2.5 rounded-xl bg-slate-950 border border-slate-800/90 ${statusColor} cursor-pointer hover:border-slate-700 transition space-y-1">
+                          <div onclick="openWorkoutModal('${w.id}')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 ${statusBorder} cursor-pointer hover:border-emerald-500/50 transition space-y-1">
                             <div class="flex items-center justify-between gap-1">
                               <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ${t.badgeClass}">${t.shortName}</span>
                               <span class="text-[10px] text-slate-400 flex items-center gap-1">
-                                ${hasShots ? `<span class="text-indigo-400" title="${w.screenshots.length} captura(s)">📷${w.screenshots.length}</span>` : ''}
+                                ${hasShots ? `<span title="Capturas">📷${w.screenshots.length}</span>` : ''}
                                 ${
                                   w.status === 'completed'
                                     ? '✅'
@@ -1443,12 +2771,12 @@ function renderCalendarAndTable() {
                                 }
                               </span>
                             </div>
-                            <div class="text-xs font-semibold text-white leading-snug line-clamp-2">${w.title}</div>
-                            <div class="text-[11px] text-slate-400 flex items-center justify-between pt-1">
-                              <span>Plan: <strong class="text-slate-200">${w.plannedKm || 0}k</strong></span>
+                            <div class="text-xs font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">${w.title}</div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-1">
+                              <span>Plan: <strong>${w.plannedKm || 0}k</strong></span>
                               ${
                                 w.status === 'completed' || w.status === 'modified'
-                                  ? `<span class="text-emerald-400 font-semibold">Real: ${w.actualKm || 0}k (${w.actualPace || '--'})</span>`
+                                  ? `<span class="text-emerald-600 dark:text-emerald-400 font-bold">Real: ${w.actualKm || 0}k</span>`
                                   : `<span>${w.plannedPace || ''}</span>`
                               }
                             </div>
@@ -1482,7 +2810,7 @@ function renderWorkoutsTable() {
   if (!tbody) return;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">No hay entrenamientos con este filtro.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No hay entrenamientos con este filtro.</td></tr>`;
     return;
   }
 
@@ -1493,49 +2821,48 @@ function renderWorkoutsTable() {
       const shots = Array.isArray(w.screenshots) ? w.screenshots : [];
 
       return `
-        <tr class="hover:bg-slate-950/60 transition">
-          <td class="py-3 px-3 font-medium text-slate-300 whitespace-nowrap">${formatShortSpanishDate(w.date)}</td>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+          <td class="py-3 px-3 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">${formatShortSpanishDate(w.date)}</td>
           <td class="py-3 px-3">
             <div class="flex items-center gap-2">
               <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${t.badgeClass}">${t.shortName}</span>
-              <span class="font-semibold text-white">${w.title}</span>
+              <span class="font-bold text-slate-900 dark:text-white">${w.title}</span>
             </div>
-            ${w.watchAnalysis ? `<div class="text-[11px] text-indigo-300 mt-0.5">⌚ ${w.watchAnalysis}</div>` : ''}
-            ${w.notes ? `<div class="text-[11px] text-slate-400 mt-0.5">${w.notes}</div>` : ''}
+            ${w.watchAnalysis ? `<div class="text-[11px] text-indigo-600 dark:text-indigo-300 mt-0.5">⌚ ${w.watchAnalysis}</div>` : ''}
+            ${w.notes ? `<div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${w.notes}</div>` : ''}
           </td>
-          <td class="py-3 px-3 text-slate-300 whitespace-nowrap">
-            ${w.plannedKm || 0} km <span class="text-slate-500">|</span> ${w.plannedPace || '--:--'}/km
+          <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+            ${w.plannedKm || 0} km · ${w.plannedPace || '--:--'}/km
           </td>
           <td class="py-3 px-3 whitespace-nowrap">
             ${
               isDone
-                ? `<span class="text-emerald-400 font-semibold">${w.actualKm || 0} km</span> a <span class="text-white">${w.actualPace || '--:--'}/km</span>`
+                ? `<span class="text-emerald-600 dark:text-emerald-400 font-bold">${w.actualKm || 0} km</span> a <span class="font-semibold text-slate-900 dark:text-white">${w.actualPace || '--:--'}/km</span>`
                 : w.status === 'skipped'
-                ? `<span class="text-rose-400">Omitido</span>`
-                : `<span class="text-slate-500">Pendiente</span>`
+                ? `<span class="text-rose-500 font-medium">Omitido</span>`
+                : `<span class="text-slate-400">Pendiente</span>`
             }
           </td>
           <td class="py-3 px-3 whitespace-nowrap">
             ${
               isDone
-                ? `<span class="text-slate-200">${w.actualHR ? w.actualHR + ' ppm' : '--'}</span>
-                   ${w.actualCadence ? `<span class="text-slate-400 text-[11px]">(${w.actualCadence} spm)</span>` : ''}
-                   · <span class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300">RPE ${w.actualRpe || '-'}/10</span>`
+                ? `<span class="font-medium text-slate-700 dark:text-slate-200">${w.actualHR ? w.actualHR + ' ppm' : '--'}</span>
+                   · <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-amber-700 dark:text-amber-300 font-semibold">RPE ${w.actualRpe || '-'}/10</span>`
                 : '--'
             }
           </td>
           <td class="py-3 px-3 whitespace-nowrap">
             ${
               shots.length > 0
-                ? `<button onclick="openWorkoutScreenshotGalleryById('${w.id}')" class="px-2 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[11px] font-medium hover:bg-indigo-500/25">
+                ? `<button onclick="openWorkoutScreenshotGalleryById('${w.id}')" class="px-2 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 text-[11px] font-semibold">
                     📷 Ver (${shots.length})
                   </button>`
-                : `<span class="text-slate-600 text-[11px]">Sin captura</span>`
+                : `<span class="text-slate-400 text-[11px]">--</span>`
             }
           </td>
           <td class="py-3 px-3 text-right whitespace-nowrap">
-            <button onclick="openWorkoutModal('${w.id}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 font-medium transition">
-              ${isDone ? 'Editar / Reloj' : 'Registrar / Reloj'}
+            <button onclick="openWorkoutModal('${w.id}')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-600 hover:text-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition">
+              ${isDone ? 'Editar' : 'Registrar'}
             </button>
           </td>
         </tr>
@@ -1545,7 +2872,7 @@ function renderWorkoutsTable() {
 }
 
 // ============================================================================
-// MODAL DE ENTRENAMIENTO (CREAR / EDITAR / SUBIR PANTALLAZOS DEL RELOJ)
+// MODAL DE ENTRENAMIENTO
 // ============================================================================
 
 function openWorkoutModal(workoutId = null, defaultDate = null) {
@@ -1630,9 +2957,9 @@ function updateModalPhysiologyPreview() {
   preview.innerHTML = `
     <div class="flex items-center gap-2">
       <span class="px-2 py-0.5 rounded text-[11px] font-semibold border ${info.badgeClass}">${info.shortName}</span>
-      <span class="text-slate-300"><strong>Mejora principal:</strong> ${info.primaryBenefit}</span>
+      <span class="text-slate-700 dark:text-slate-300"><strong>Beneficio:</strong> ${info.primaryBenefit}</span>
     </div>
-    <span class="text-[11px] text-slate-400">Recuperación sugerida: ${info.recoveryHours}</span>
+    <span class="text-[11px] text-slate-500">Recuperación: ${info.recoveryHours}</span>
   `;
 }
 
@@ -1688,17 +3015,14 @@ function saveWorkoutFromModal() {
   };
 
   const existingIdx = appState.workouts.findIndex((w) => w.id === id);
-  if (existingIdx >= 0) {
-    appState.workouts[existingIdx] = workoutObj;
-  } else {
-    appState.workouts.push(workoutObj);
-  }
+  if (existingIdx >= 0) appState.workouts[existingIdx] = workoutObj;
+  else appState.workouts.push(workoutObj);
 
   saveState();
   closeWorkoutModal();
   renderDashboard();
   renderCalendarAndTable();
-  showToast('Sesión y capturas del reloj guardadas correctamente');
+  showToast('Entrenamiento guardado y recomendaciones diarias actualizadas');
 }
 
 function deleteWorkoutFromModal() {
@@ -1713,7 +3037,7 @@ function deleteWorkoutFromModal() {
 }
 
 // ============================================================================
-// RENDERIZADO: PESTAÑA 3 — ¿QUÉ MEJORA CADA ENTRENAMIENTO? (FISIOLOGÍA VISUAL)
+// PESTAÑA 3: FISIOLOGÍA VISUAL Y DATOS CURIOSOS
 // ============================================================================
 
 function calculateUserAccumulatedScores() {
@@ -1773,10 +3097,10 @@ function renderPhysiologyTab() {
         return `
           <button onclick="selectPhysiologyWorkoutType('${key}')" class="p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
             isSel
-              ? 'bg-slate-800 border-emerald-400 text-white shadow-md'
-              : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-slate-900 dark:text-white font-bold shadow-sm'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
           }">
-            <span class="text-xs font-semibold">${t.shortName}</span>
+            <span class="text-xs">${t.shortName}</span>
             <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${t.color}"></span>
           </button>
         `;
@@ -1790,28 +3114,12 @@ function renderPhysiologyTab() {
     detailCard.innerHTML = `
       <div class="flex items-center justify-between">
         <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border ${info.badgeClass}">${info.name}</span>
-        <span class="text-xs text-slate-400">Zona: <strong class="text-white">${info.zone}</strong></span>
+        <span class="text-xs text-slate-500">Zona: <strong class="text-slate-900 dark:text-white">${info.zone}</strong></span>
       </div>
-      <p class="text-xs text-slate-300 leading-relaxed">${info.description}</p>
-      <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5 text-xs">
-        <div><strong class="text-emerald-400">Adaptación Clave:</strong> <span class="text-slate-200">${info.primaryBenefit}</span></div>
-        <div><strong class="text-sky-400">Tiempo de Supercompensación:</strong> <span class="text-slate-200">${info.recoveryHours}</span></div>
-      </div>
-      <div class="space-y-2 pt-1">
-        ${PHYSIOLOGY_DIMENSIONS.map((dim) => {
-          const val = info.scores[dim.key];
-          return `
-            <div>
-              <div class="flex justify-between text-[11px] mb-0.5">
-                <span class="text-slate-300">${dim.label}</span>
-                <span class="font-bold text-white">${val}/10</span>
-              </div>
-              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-300" style="width: ${val * 10}%; background-color: ${info.color}"></div>
-              </div>
-            </div>
-          `;
-        }).join('')}
+      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${info.description}</p>
+      <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
+        <div><strong class="text-emerald-600 dark:text-emerald-400">Adaptación Clave:</strong> <span>${info.primaryBenefit}</span></div>
+        <div><strong class="text-sky-600 dark:text-sky-400">Supercompensación:</strong> <span>${info.recoveryHours}</span></div>
       </div>
     `;
   }
@@ -1824,11 +3132,11 @@ function renderPhysiologyTab() {
       return `
         <div>
           <div class="flex justify-between text-xs mb-1">
-            <span class="text-slate-300 font-medium">${dim.label}</span>
-            <span class="text-emerald-400 font-bold">${score} / 10</span>
+            <span class="text-slate-700 dark:text-slate-300 font-medium">${dim.label}</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-bold">${score} / 10</span>
           </div>
-          <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-            <div class="h-full bg-gradient-to-r from-emerald-500 to-sky-400 rounded-full" style="width: ${score * 10}%"></div>
+          <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div class="h-full bg-emerald-600 dark:bg-emerald-500 rounded-full" style="width: ${score * 10}%"></div>
           </div>
         </div>
       `;
@@ -1837,19 +3145,21 @@ function renderPhysiologyTab() {
 
   updatePhysiologyRadar();
   renderIntensityPolarizationChart();
+  renderFactsLibraryGrid();
   renderPhysiologyMatrixTable();
 }
 
 function updatePhysiologyRadar() {
   const ctx = document.getElementById('physiologyRadarChart');
   if (!ctx) return;
+  const colors = getChartThemeColors();
 
   const primaryType = WORKOUT_TYPES_CATALOG[selectedPhysiologyType] || WORKOUT_TYPES_CATALOG.intervals;
   const compareKey = document.getElementById('compareWorkoutTypeSelect')?.value || 'user_accumulated';
 
-  let secondaryLabel = 'Tu Perfil Acumulado (Sesiones Completadas)';
+  let secondaryLabel = 'Tu Perfil Acumulado';
   let secondaryData = [];
-  let secondaryColor = '#10b981';
+  let secondaryColor = '#059669';
 
   if (compareKey === 'user_accumulated') {
     const userScores = calculateUserAccumulatedScores();
@@ -1870,7 +3180,7 @@ function updatePhysiologyRadar() {
         {
           label: primaryType.name,
           data: PHYSIOLOGY_DIMENSIONS.map((d) => primaryType.scores[d.key]),
-          backgroundColor: `${primaryType.color}33`,
+          backgroundColor: `${primaryType.color}28`,
           borderColor: primaryType.color,
           pointBackgroundColor: primaryType.color,
           borderWidth: 2.5
@@ -1878,7 +3188,7 @@ function updatePhysiologyRadar() {
         {
           label: secondaryLabel,
           data: secondaryData,
-          backgroundColor: 'rgba(16, 185, 129, 0.18)',
+          backgroundColor: 'rgba(5, 150, 105, 0.15)',
           borderColor: secondaryColor,
           pointBackgroundColor: secondaryColor,
           borderWidth: 2,
@@ -1894,13 +3204,13 @@ function updatePhysiologyRadar() {
           min: 0,
           max: 10,
           ticks: { stepSize: 2, display: false },
-          grid: { color: 'rgba(148, 163, 184, 0.2)' },
-          angleLines: { color: 'rgba(148, 163, 184, 0.2)' },
-          pointLabels: { color: '#e2e8f0', font: { size: 11, weight: '600' } }
+          grid: { color: colors.gridColor },
+          angleLines: { color: colors.gridColor },
+          pointLabels: { color: colors.textColor, font: { size: 11, weight: '600' } }
         }
       },
       plugins: {
-        legend: { labels: { color: '#f8fafc', font: { size: 12 } } }
+        legend: { labels: { color: colors.textColor, font: { size: 12 } } }
       }
     }
   });
@@ -1909,6 +3219,7 @@ function updatePhysiologyRadar() {
 function renderIntensityPolarizationChart() {
   const ctx = document.getElementById('intensityDistributionChart');
   if (!ctx) return;
+  const colors = getChartThemeColors();
 
   let lowKm = 0;
   let modKm = 0;
@@ -1928,20 +3239,18 @@ function renderIntensityPolarizationChart() {
   const hardPct = 100 - lowPct;
 
   const badge = document.getElementById('polarizationBadge');
-  if (badge) {
-    badge.textContent = `Relación Actual: ${lowPct}% Suave / ${hardPct}% Intenso`;
-  }
+  if (badge) badge.textContent = `${lowPct}% Suave / ${hardPct}% Intenso`;
 
   if (intensityChartInstance) intensityChartInstance.destroy();
   intensityChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Z1-Z2 Aeróbico Extensivo (Suave/Fondo)', 'Z3-Z4 Umbral / Tempo', 'Z5 VO2max / Series / Cuestas'],
+      labels: ['Z1-Z2 Suave / Fondo', 'Z3-Z4 Umbral / Tempo', 'Z5 Series / VO2max'],
       datasets: [
         {
-          label: 'Kilómetros Acumulados + Planeados',
+          label: 'Kilómetros',
           data: [Number(lowKm.toFixed(1)), Number(modKm.toFixed(1)), Number(highKm.toFixed(1))],
-          backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(244, 63, 94, 0.8)'],
+          backgroundColor: ['#059669', '#d97706', '#e11d48'],
           borderRadius: 8
         }
       ]
@@ -1952,8 +3261,8 @@ function renderIntensityPolarizationChart() {
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51,65,85,0.25)' } },
-        y: { ticks: { color: '#e2e8f0', font: { size: 11 } }, grid: { display: false } }
+        x: { ticks: { color: colors.mutedColor }, grid: { color: colors.gridColor } },
+        y: { ticks: { color: colors.textColor, font: { size: 11 } }, grid: { display: false } }
       }
     }
   });
@@ -1967,12 +3276,10 @@ function renderPhysiologyMatrixTable() {
   const renderScorePill = (val) => {
     const color =
       val >= 9
-        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+        ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/40'
         : val >= 7
-        ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
-        : val >= 5
-        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-        : 'bg-slate-800 text-slate-400 border-slate-700';
+        ? 'bg-sky-50 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/40'
+        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700';
     return `<span class="px-2 py-0.5 rounded border font-semibold ${color}">${val}/10</span>`;
   };
 
@@ -1980,12 +3287,12 @@ function renderPhysiologyMatrixTable() {
     .map((k) => {
       const t = WORKOUT_TYPES_CATALOG[k];
       return `
-        <tr class="hover:bg-slate-950/60 cursor-pointer" onclick="selectPhysiologyWorkoutType('${k}')">
-          <td class="py-3 px-3 font-semibold text-white">
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onclick="selectPhysiologyWorkoutType('${k}')">
+          <td class="py-3 px-3 font-bold text-slate-900 dark:text-white">
             <span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background-color:${t.color}"></span>
             ${t.name}
           </td>
-          <td class="py-3 px-3 text-slate-300">${t.zone}</td>
+          <td class="py-3 px-3 text-slate-600 dark:text-slate-300">${t.zone}</td>
           <td class="py-3 px-3">${renderScorePill(t.scores.aerobicBase)}</td>
           <td class="py-3 px-3">${renderScorePill(t.scores.lactateThreshold)}</td>
           <td class="py-3 px-3">${renderScorePill(t.scores.vo2Max)}</td>
@@ -1999,17 +3306,18 @@ function renderPhysiologyMatrixTable() {
 }
 
 // ============================================================================
-// RENDERIZADO: PESTAÑA 4 — OBJETIVOS Y PREDICCIÓN DE MARCAS (VDOT)
+// PESTAÑA 4: OBJETIVOS Y PREDICCIÓN DE MARCAS (VDOT)
 // ============================================================================
 
 function renderGoalsTab() {
   const container = document.getElementById('goalsGridContainer');
   const vdot = getRunnerVDOT(appState.profile);
-  document.getElementById('predictorVdotSpan').textContent = vdot.toFixed(1);
+  const predSpan = document.getElementById('predictorVdotSpan');
+  if (predSpan) predSpan.textContent = vdot.toFixed(1);
 
   if (container) {
     if (appState.goals.length === 0) {
-      container.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400 bg-slate-900 rounded-2xl border border-slate-800">No tienes objetivos registrados. Crea tu primer reto arriba.</div>`;
+      container.innerHTML = `<div class="col-span-full rp-card p-8 text-center text-slate-400 text-xs">No tienes objetivos registrados. Crea tu primer reto arriba.</div>`;
     } else {
       container.innerHTML = appState.goals
         .map((g) => {
@@ -2019,55 +3327,53 @@ function renderGoalsTab() {
               ? formatSecondsToTime(targetSec / g.distanceKm)
               : '--:--';
           const reqVdot = calculateVDOTFromRace(g.distanceKm * 1000, targetSec);
-          const diffDays = Math.ceil(
-            (new Date(g.date) - new Date()) / (1000 * 60 * 60 * 24)
-          );
+          const diffDays = Math.ceil((new Date(g.date) - new Date()) / (1000 * 60 * 60 * 24));
           const vdotGap = reqVdot ? (reqVdot - vdot).toFixed(1) : 0;
 
           return `
-            <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between space-y-4">
+            <div class="rp-card p-5 flex flex-col justify-between space-y-4">
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${
                     g.priority === 'A'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                      ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/40'
+                      : 'bg-sky-50 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-500/40'
                   }">Prioridad ${g.priority}</span>
-                  <span class="text-xs text-slate-400">${
+                  <span class="text-xs text-slate-500">${
                     diffDays >= 0 ? `En ${diffDays} días` : 'Finalizado'
-                  } (${formatShortSpanishDate(g.date)})</span>
+                  }</span>
                 </div>
-                <h3 class="font-display font-bold text-lg text-white">${g.name}</h3>
-                <p class="text-xs text-slate-400 mt-1">${g.notes || ''}</p>
+                <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">${g.name}</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${g.notes || ''}</p>
               </div>
 
-              <div class="grid grid-cols-3 gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 text-center">
+              <div class="grid grid-cols-3 gap-2 rp-subtle-box p-3 text-center">
                 <div>
                   <div class="text-[10px] text-slate-400 uppercase">Distancia</div>
-                  <div class="text-sm font-bold text-white">${Number(g.distanceKm).toFixed(1)} km</div>
+                  <div class="text-sm font-bold text-slate-900 dark:text-white">${Number(g.distanceKm).toFixed(1)}k</div>
                 </div>
                 <div>
-                  <div class="text-[10px] text-slate-400 uppercase">Tiempo Meta</div>
-                  <div class="text-sm font-bold text-emerald-400">${g.targetTime}</div>
+                  <div class="text-[10px] text-slate-400 uppercase">Meta</div>
+                  <div class="text-sm font-bold text-emerald-600 dark:text-emerald-400">${g.targetTime}</div>
                 </div>
                 <div>
-                  <div class="text-[10px] text-slate-400 uppercase">Ritmo Req.</div>
-                  <div class="text-sm font-bold text-sky-400">${reqPace}/km</div>
+                  <div class="text-[10px] text-slate-400 uppercase">Ritmo</div>
+                  <div class="text-sm font-bold text-sky-600 dark:text-sky-400">${reqPace}/k</div>
                 </div>
               </div>
 
               <div class="flex items-center justify-between text-xs pt-1">
-                <span class="text-slate-400">
-                  VDOT requerido: <strong class="text-white">${reqVdot ? reqVdot.toFixed(1) : '--'}</strong>
+                <span class="text-slate-500">
+                  VDOT req: <strong class="text-slate-800 dark:text-white">${reqVdot ? reqVdot.toFixed(1) : '--'}</strong>
                   ${
                     reqVdot
                       ? vdotGap > 0
-                        ? `<span class="text-amber-400">(+${vdotGap} pts por ganar)</span>`
-                        : `<span class="text-emerald-400">(¡Dentro de tu capacidad!)</span>`
+                        ? `<span class="text-amber-600 dark:text-amber-400">(+${vdotGap} pts)</span>`
+                        : `<span class="text-emerald-600 dark:text-emerald-400">(¡A tu alcance!)</span>`
                       : ''
                   }
                 </span>
-                <button onclick="deleteGoal('${g.id}')" class="text-rose-400 hover:underline text-xs">Eliminar</button>
+                <button onclick="deleteGoal('${g.id}')" class="text-rose-500 hover:underline text-xs font-medium">Eliminar</button>
               </div>
             </div>
           `;
@@ -2079,7 +3385,7 @@ function renderGoalsTab() {
   const predGrid = document.getElementById('racePredictionsGrid');
   if (predGrid) {
     const standardRaces = [
-      { label: '5K Ruta / Pista', meters: 5000, forceHours: false },
+      { label: '5K Ruta', meters: 5000, forceHours: false },
       { label: '10K Ruta', meters: 10000, forceHours: false },
       { label: 'Media Maratón (21.1K)', meters: 21097.5, forceHours: true },
       { label: 'Maratón (42.2K)', meters: 42195, forceHours: true }
@@ -2089,10 +3395,10 @@ function renderGoalsTab() {
         const sec = predictRaceTimeSeconds(vdot, r.meters);
         const pace = formatSecondsToTime(sec / (r.meters / 1000));
         return `
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
-            <div class="text-xs text-slate-400">${r.label}</div>
-            <div class="text-xl font-display font-bold text-white mt-1">${formatSecondsToTime(sec, r.forceHours)}</div>
-            <div class="text-xs text-emerald-400 mt-0.5">Ritmo: ${pace} /km</div>
+          <div class="rp-subtle-box p-4">
+            <div class="text-xs text-slate-500 dark:text-slate-400">${r.label}</div>
+            <div class="text-xl font-display font-bold text-slate-900 dark:text-white mt-1">${formatSecondsToTime(sec, r.forceHours)}</div>
+            <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">Ritmo: ${pace} /km</div>
           </div>
         `;
       })
@@ -2126,11 +3432,8 @@ function closeGoalModal() {
 function handleGoalDistanceSelect() {
   const val = document.getElementById('gmDistanceSelect').value;
   const wrapper = document.getElementById('gmCustomDistWrapper');
-  if (val === 'custom') {
-    wrapper.classList.remove('hidden');
-  } else {
-    wrapper.classList.add('hidden');
-  }
+  if (val === 'custom') wrapper.classList.remove('hidden');
+  else wrapper.classList.add('hidden');
 }
 
 function saveGoalFromModal() {
@@ -2140,7 +3443,7 @@ function saveGoalFromModal() {
       ? Number(document.getElementById('gmCustomDistance').value) || 10
       : Number(distSel);
 
-  const newGoal = {
+  appState.goals.push({
     id: `goal-${Date.now()}`,
     name: document.getElementById('gmName').value.trim(),
     distanceKm,
@@ -2148,9 +3451,8 @@ function saveGoalFromModal() {
     targetTime: document.getElementById('gmTargetTime').value.trim(),
     priority: document.getElementById('gmPriority').value,
     notes: document.getElementById('gmNotes').value.trim()
-  };
+  });
 
-  appState.goals.push(newGoal);
   saveState();
   closeGoalModal();
   renderGoalsTab();
@@ -2167,11 +3469,11 @@ function deleteGoal(goalId) {
 }
 
 // ============================================================================
-// RENDERIZADO: PESTAÑA 5 — PERFIL FISIOLÓGICO Y ZONAS
+// PESTAÑA 5: PERFIL FISIOLÓGICO Y ZONAS
 // ============================================================================
 
 function renderProfileTab() {
-  const p = appState.profile;
+  const p = appState.profile || {};
   document.getElementById('profName').value = p.name || '';
   document.getElementById('profAge').value = p.age || '';
   document.getElementById('profWeight').value = p.weight || '';
@@ -2203,17 +3505,17 @@ function renderProfileTab() {
     zContainer.innerHTML = zones
       .map(
         (z) => `
-        <div class="p-3.5 rounded-xl border ${z.color} space-y-1">
+        <div class="rp-subtle-box p-3.5 space-y-1">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full ${z.dot}"></span>
-              <span class="font-display font-bold text-sm text-white">${z.zone} — ${z.name}</span>
+              <span class="font-display font-bold text-sm text-slate-900 dark:text-white">${z.zone} — ${z.name}</span>
             </div>
-            <span class="text-xs font-bold">${z.hrRange}</span>
+            <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400">${z.hrRange}</span>
           </div>
           <div class="flex items-center justify-between text-xs pt-0.5">
-            <span class="text-slate-400">${z.desc}</span>
-            <span class="font-mono font-semibold text-white">Ritmo: ${z.paceRange}</span>
+            <span class="text-slate-500 dark:text-slate-400">${z.desc}</span>
+            <span class="font-mono font-bold text-slate-800 dark:text-slate-200">${z.paceRange}</span>
           </div>
         </div>
       `
@@ -2224,7 +3526,7 @@ function renderProfileTab() {
 
 function saveProfileForm() {
   appState.profile = {
-    name: document.getElementById('profName').value.trim(),
+    name: document.getElementById('profName').value.trim() || 'Corredor',
     age: Number(document.getElementById('profAge').value) || 30,
     weight: Number(document.getElementById('profWeight').value) || 70,
     height: Number(document.getElementById('profHeight').value) || 175,
@@ -2247,18 +3549,18 @@ function saveProfileForm() {
 
   saveState();
   renderProfileTab();
-  updateHeaderBadges();
-  showToast('Perfil fisiológico y zonas de entrenamiento actualizados');
+  renderDashboard();
+  showToast('Perfil y zonas actualizados');
 }
 
 // ============================================================================
-// PESTAÑA 6: CENTRO GEMINI AI (GENERACIÓN DE PROMPT, API DIRECTA E IMPORTACIÓN)
+// PESTAÑA 6: CENTRO GEMINI AI
 // ============================================================================
 
 function saveGeminiApiKey() {
   const key = document.getElementById('geminiApiKeyInput')?.value.trim() || '';
   localStorage.setItem(GEMINI_KEY_STORAGE, key);
-  showToast('API Key guardada localmente en tu navegador');
+  showToast('API Key guardada localmente');
 }
 
 function renderGeminiTab() {
@@ -2274,10 +3576,10 @@ function renderCoachFeedbackBox() {
 
   if (dateEl) dateEl.textContent = `Actualizado: ${formatShortSpanishDate(fb.lastUpdated)}`;
   box.innerHTML = `
-    <p class="text-slate-200 font-medium">${fb.summary || 'Sin análisis aún.'}</p>
+    <p class="font-medium text-slate-800 dark:text-slate-200">${fb.summary || 'Sin análisis aún.'}</p>
     ${
       fb.recommendations && fb.recommendations.length > 0
-        ? `<ul class="list-disc pl-4 space-y-1 text-emerald-300 pt-1">
+        ? `<ul class="list-disc pl-4 space-y-1 text-emerald-700 dark:text-emerald-300 pt-1">
             ${fb.recommendations.map((r) => `<li>${r}</li>`).join('')}
           </ul>`
         : ''
@@ -2296,65 +3598,48 @@ function buildRunnerContextPrompt(mode = 'adjust') {
     .slice(-12);
 
   const mondayNext = getMondayOfWeek(mode === 'new_week' ? 1 : 0);
-  const targetStartISO =
-    mode === 'new_week' ? formatDateISO(mondayNext) : getLocalISODate(0);
+  const targetStartISO = mode === 'new_week' ? formatDateISO(mondayNext) : getLocalISODate(0);
 
   const actionInstruction =
     mode === 'new_week'
-      ? `Diseña la planificación completa de 7 días para la semana que inicia el ${targetStartISO} (Lunes a Domingo), ajustando las cargas según cómo respondí en mis entrenamientos recientes y los datos de mi reloj.`
-      : `Analiza mis sesiones recientes completadas/modificadas vs las planeadas (incluyendo la telemetría extraída de las capturas de mi reloj, RPE, pulsaciones y notas) y REAJUSTA mis entrenamientos pendientes a partir de hoy (${targetStartISO}) para optimizar mis adaptaciones y evitar sobreentrenamiento.`;
+      ? `Diseña la planificación de 7 días para la semana que inicia el ${targetStartISO} (Lunes a Domingo).`
+      : `Analiza mis sesiones recientes y REAJUSTA mis entrenamientos pendientes a partir de hoy (${targetStartISO}).`;
 
-  return `Actúa como mi Entrenador Fisiológico de Running de Élite. Aquí está mi estado actual exportado desde mi app RunPulse AI:
-
-=== 1. PERFIL FISIOLÓGICO DEL CORREDOR ===
-- Nombre: ${p.name} | Edad: ${p.age} años | Peso: ${p.weight} kg | Estatura: ${p.height} cm
-- FC Reposo: ${p.restHR} ppm | FC Máx: ${p.maxHR} ppm | FC Umbral: ${p.lthr} ppm | VDOT Estimado: ${vdot}
-- Nivel: ${p.experience} | Días disponibles/semana: ${p.daysAvailable} | Día Tirada Larga: ${p.longRunDay}
-- Mejores Marcas: 5K (${p.pr5k || 'N/A'}), 10K (${p.pr10k || 'N/A'}), 21K (${p.pr21k || 'N/A'}), 42K (${p.pr42k || 'N/A'})
-- Terreno: ${p.terrain}
-- Historial de molestias/lesiones a cuidar: ${p.injuries || 'Ninguna'}
-
-=== 2. ZONAS ACTUALES DE ENTRENAMIENTO ===
-${zones.map((z) => `- ${z.zone} (${z.name}): ${z.hrRange} | Ritmo: ${z.paceRange}`).join('\n')}
-
-=== 3. OBJETIVOS DE CARRERA ===
-${appState.goals.map((g) => `- [Prioridad ${g.priority}] ${g.name}: ${g.distanceKm} km el ${g.date} -> Tiempo Meta: ${g.targetTime} (${g.notes})`).join('\n')}
-
-=== 4. BITÁCORA RECIENTE Y TELEMETRÍA DEL RELOJ (PLANEADO VS REALIZADO) ===
+  return `Actúa como mi Entrenador Fisiológico de Running. Estado actual de ${p.name} en RunPulse AI:
+- Edad: ${p.age} | Peso: ${p.weight}kg | FC Reposo: ${p.restHR} | FC Máx: ${p.maxHR} | VDOT: ${vdot}
+- Nivel: ${p.experience} | Días/sem: ${p.daysAvailable} | Tirada Larga: ${p.longRunDay}
+- Marcas: 5K (${p.pr5k || 'N/A'}), 10K (${p.pr10k || 'N/A'}), 21K (${p.pr21k || 'N/A'}), 42K (${p.pr42k || 'N/A'})
+- Cuidados/Molestias: ${p.injuries || 'Ninguna'}
+- Zonas:
+${zones.map((z) => `  * ${z.zone}: ${z.hrRange} | ${z.paceRange}`).join('\n')}
+- Historial reciente:
 ${recentWorkouts
   .map(
     (w) =>
-      `- [${w.date}] (${w.type.toUpperCase()}) "${w.title}" | Estado: ${w.status.toUpperCase()} | Planeado: ${w.plannedKm}km a ${w.plannedPace}/km | Realizado: ${
+      `  * [${w.date}] (${w.type}) "${w.title}" | Estado: ${w.status} | Plan: ${w.plannedKm}km a ${w.plannedPace} | Real: ${
         w.status === 'completed' || w.status === 'modified'
-          ? `${w.actualKm}km en ${w.actualMin}min (${w.actualPace}/km), FC Media: ${w.actualHR}ppm (Máx: ${w.actualMaxHR || '-'}ppm), Cadencia: ${w.actualCadence || '-'}spm, Desnivel: +${w.actualElevation || 0}m, RPE: ${w.actualRpe}/10`
+          ? `${w.actualKm}km (${w.actualPace}/km), FC ${w.actualHR}ppm, RPE ${w.actualRpe}/10`
           : 'Pendiente'
-      }${w.watchAnalysis ? ` | Telemetría/Splits del Reloj: ${w.watchAnalysis}` : ''} | Notas: ${w.notes || '-'}`
+      }`
   )
   .join('\n')}
-
-${customNote ? `=== NOTA ESPECIAL DE HOY ===\n"${customNote}"\n` : ''}
-=== TAREA SOLICITADA ===
-${actionInstruction}
-
-IMPORTANTE: Devuelve tu respuesta incluyendo un bloque JSON válido con exactamente esta estructura para que mi aplicación RunPulse AI actualice mi calendario automáticamente (los valores de "type" deben ser uno de: "easy", "tempo", "intervals", "long", "fartlek", "hills", "strength", "race", "rest"):
-
+${customNote ? `\nNota de hoy: "${customNote}"\n` : ''}
+Tarea: ${actionInstruction}
+Devuelve un bloque JSON válido con esta estructura exacta ("type": "easy"|"tempo"|"intervals"|"long"|"fartlek"|"hills"|"strength"|"race"|"rest"):
 \`\`\`json
 {
-  "coachSummary": "Explicación fisiológica breve de cómo me viste según los datos de mi reloj y por qué hiciste estos ajustes...",
-  "recommendations": [
-    "Consejo clave 1",
-    "Consejo clave 2"
-  ],
+  "coachSummary": "Diagnóstico breve...",
+  "recommendations": ["Consejo 1", "Consejo 2"],
   "workouts": [
     {
       "date": "${targetStartISO}",
       "type": "easy",
-      "title": "Rodaje Aeróbico Z2 Regenerativo",
+      "title": "Rodaje Aeróbico Z2",
       "plannedKm": 8.0,
       "plannedMin": 42,
       "plannedPace": "05:15",
-      "plannedZone": "Z2 (140-154 ppm)",
-      "notes": "Explicación de la sesión y qué mejora fisiológicamente"
+      "plannedZone": "Z2",
+      "notes": "Objetivo fisiológico"
     }
   ]
 }
@@ -2371,19 +3656,18 @@ function copyPromptToClipboard() {
   const area = document.getElementById('generatedPromptTextarea');
   if (!area) return;
   navigator.clipboard.writeText(area.value).then(() => {
-    showToast('Prompt copiado al portapapeles. Pégalo en Gemini.');
+    showToast('Prompt copiado al portapapeles.');
   });
 }
 
-// Conexión Directa con Gemini API desde el navegador (con fallback automático de modelos)
 async function callGeminiDirectAPI(mode = 'adjust') {
   const apiKey = document.getElementById('geminiApiKeyInput')?.value.trim();
-  const preferredModel = document.getElementById('geminiModelSelect')?.value || 'gemini-3-flash-preview';
+  const preferredModel = document.getElementById('geminiModelSelect')?.value || 'gemini-2.5-flash';
   const statusEl = document.getElementById('geminiApiStatusMsg');
 
   if (!apiKey) {
-    statusEl.className = 'text-xs p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 block';
-    statusEl.textContent = 'Por favor ingresa tu Gemini API Key arriba, o usa la Opción B (Copiar y Pegar Prompt sin API Key).';
+    statusEl.className = 'text-xs p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 text-rose-700 dark:text-rose-300 block';
+    statusEl.textContent = 'Ingresa tu Gemini API Key arriba o usa la Opción B (Copiar Prompt).';
     return;
   }
 
@@ -2391,19 +3675,12 @@ async function callGeminiDirectAPI(mode = 'adjust') {
   const prompt = buildRunnerContextPrompt(mode);
   generateGeminiPrompt(mode);
 
-  const fallbackChain = [
-    preferredModel,
-    'gemini-3-flash-preview',
-    'gemini-3.1-pro-preview',
-    'gemini-3.1-flash-lite-preview',
-    'gemini-2.5-flash'
-  ].filter((m, idx, arr) => arr.indexOf(m) === idx);
-
+  const fallbackChain = [preferredModel, 'gemini-2.5-flash', 'gemini-3-flash-preview'];
   let lastError = null;
 
   for (const model of fallbackChain) {
-    statusEl.className = 'text-xs p-3 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 block';
-    statusEl.textContent = `Analizando tu progreso fisiológico y telemetría del reloj con ${model}...`;
+    statusEl.className = 'text-xs p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 text-indigo-700 dark:text-indigo-300 block';
+    statusEl.textContent = `Analizando tu progreso con ${model}...`;
 
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -2412,64 +3689,44 @@ async function callGeminiDirectAPI(mode = 'adjust') {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.4,
-            responseMimeType: 'application/json'
-          }
+          generationConfig: { temperature: 0.4, responseMimeType: 'application/json' }
         })
       });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        const errMsg = errData?.error?.message || `HTTP ${response.status}`;
-        lastError = new Error(errMsg);
-        if (response.status === 404 || response.status === 400 || response.status === 429 || errMsg.includes('no longer available')) {
-          continue;
-        }
-        throw lastError;
-      }
-
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      if (!rawText) throw new Error('Respuesta vacía de Gemini API.');
-
       document.getElementById('geminiImportTextarea').value = rawText;
       const count = applyParsedGeminiPlan(rawText);
 
-      const selectEl = document.getElementById('geminiModelSelect');
-      if (selectEl && selectEl.value !== model) {
-        selectEl.value = model;
-      }
-
-      statusEl.className = 'text-xs p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 block';
-      statusEl.textContent = `¡Éxito (${model})! Gemini reajustó e importó ${count} entrenamientos a tu calendario.`;
+      statusEl.className = 'text-xs p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 text-emerald-700 dark:text-emerald-300 block';
+      statusEl.textContent = `¡Listo! Se actualizaron ${count} entrenamientos en tu calendario.`;
       return;
     } catch (err) {
       lastError = err;
     }
   }
 
-  statusEl.className = 'text-xs p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 block';
-  statusEl.textContent = `Error al conectar con Gemini API: ${lastError ? lastError.message : 'Error desconocido'}`;
+  statusEl.className = 'text-xs p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 text-rose-700 dark:text-rose-300 block';
+  statusEl.textContent = `Error al conectar con Gemini API: ${lastError ? lastError.message : 'Error'}`;
 }
 
 function importFromGeminiText() {
   const raw = document.getElementById('geminiImportTextarea')?.value.trim();
   if (!raw) {
-    showToast('Pega primero la respuesta de Gemini en el cuadro de texto.');
+    showToast('Pega primero la respuesta de Gemini.');
     return;
   }
   try {
     const count = applyParsedGeminiPlan(raw);
-    showToast(`¡Se aplicaron ${count} entrenamientos de Gemini al calendario!`);
+    showToast(`¡Se aplicaron ${count} entrenamientos al calendario!`);
   } catch (err) {
-    alert(`No se pudo interpretar el formato: ${err.message}`);
+    alert(`No se pudo leer el formato JSON: ${err.message}`);
   }
 }
 
 function applyParsedGeminiPlan(rawText) {
   let parsed = null;
-
   const codeBlockMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidateJson = codeBlockMatch ? codeBlockMatch[1].trim() : rawText.trim();
 
@@ -2484,9 +3741,7 @@ function applyParsedGeminiPlan(rawText) {
   }
 
   if (!parsed || !Array.isArray(parsed.workouts)) {
-    throw new Error(
-      'Asegúrate de que la respuesta de Gemini contenga el bloque JSON con la lista "workouts". Usa el botón Copiar Prompt de la izquierda para que Gemini responda con el formato exacto.'
-    );
+    throw new Error('La respuesta debe incluir la lista "workouts" en JSON.');
   }
 
   const replacePlanned = document.getElementById('replaceFuturePlannedCheckbox')?.checked ?? true;
@@ -2546,19 +3801,34 @@ function applyParsedGeminiPlan(rawText) {
 }
 
 // ============================================================================
-// EXPORTAR / IMPORTAR RESPALDO COMPLETO JSON
+// EXPORTAR / IMPORTAR RESPALDOS (MULTI-CORREDOR O INDIVIDUAL)
 // ============================================================================
 
 function exportAllData() {
+  saveState();
+  const dataStr = JSON.stringify(multiStore, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `runpulse-todos-los-corredores-${getLocalISODate(0)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Respaldo completo de todos los corredores descargado');
+}
+
+function exportActiveUserData() {
+  saveState();
   const dataStr = JSON.stringify(appState, null, 2);
   const blob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `runpulse-respaldo-${getLocalISODate(0)}.json`;
+  const safeName = (appState.profile.name || 'corredor').toLowerCase().replace(/[^a-z0-9]/g, '-');
+  a.download = `runpulse-${safeName}-${getLocalISODate(0)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('Archivo de respaldo descargado');
+  showToast(`Respaldo de ${appState.profile.name} descargado`);
 }
 
 function importAllData(event) {
@@ -2568,16 +3838,28 @@ function importAllData(event) {
   reader.onload = (e) => {
     try {
       const imported = JSON.parse(e.target.result);
-      if (imported && imported.profile && Array.isArray(imported.workouts)) {
-        appState = imported;
+      if (imported && Array.isArray(imported.users)) {
+        multiStore = imported;
+        appState = ensureUserStateIntegrity(getActiveUserEntry().state);
         saveState();
-        renderDashboard();
-        renderCalendarAndTable();
-        renderProfileTab();
-        renderGoalsTab();
-        showToast('Respaldo restaurado con éxito');
+        refreshAllViews();
+        showToast('Respaldo multi-corredor restaurado con éxito');
+      } else if (imported && imported.profile && Array.isArray(imported.workouts)) {
+        // Es un respaldo individual: lo agregamos como nuevo perfil o actualizamos
+        const newId = `user-${Date.now()}`;
+        multiStore.users.push({
+          id: newId,
+          color: '#059669',
+          createdAt: getLocalISODate(0),
+          state: ensureUserStateIntegrity(imported)
+        });
+        multiStore.activeUserId = newId;
+        appState = getActiveUserEntry().state;
+        saveState();
+        refreshAllViews();
+        showToast(`Perfil "${imported.profile.name}" importado y activado`);
       } else {
-        alert('El archivo JSON no tiene la estructura válida de RunPulse.');
+        alert('El archivo JSON no tiene un formato válido de RunPulse.');
       }
     } catch (err) {
       alert('Error al leer el archivo JSON: ' + err.message);
@@ -2587,11 +3869,14 @@ function importAllData(event) {
 }
 
 function loadDemoDataConfirm() {
-  if (confirm('¿Restaurar los datos de demostración? Esto reemplazará los datos actuales.')) {
-    appState = createDefaultState();
+  if (confirm('¿Restaurar los perfiles demostrativos (Carlos y Laura)? Esto restablecerá los datos de ejemplo.')) {
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    multiStore = createInitialMultiStore();
+    appState = getActiveUserEntry().state;
     saveState();
     switchTab('dashboard');
-    showToast('Datos de ejemplo cargados');
+    refreshAllViews();
+    showToast('Perfiles demostrativos restaurados');
   }
 }
 
@@ -2601,9 +3886,7 @@ function loadDemoDataConfirm() {
 
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
-  renderDashboard();
-  renderProfileTab();
-  renderGoalsTab();
-  renderCoachFeedbackBox();
+  refreshAllViews();
+  startBackgroundReminderWatcher();
   if (window.lucide) lucide.createIcons();
 });

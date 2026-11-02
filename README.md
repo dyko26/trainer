@@ -1,36 +1,42 @@
-# RunPulse AI — Control de Running & Entrenador Adaptativo Gemini
+# RunPulse AI — App & Sitio Web de Running Multi-Corredor
 
-Aplicación web local para corredores diseñada para llevar el control fisiológico de tu progreso, planificar entrenamientos diarios, visualizar qué sistemas mejora cada sesión y **sincronizar tus planes dinámicamente con Gemini AI**.
+Aplicación web progresiva (PWA) y sitio web local diseñado con una estética **económica visualmente, profesional y amigable**, pensada para que **uno o varios corredores en un mismo dispositivo** lleven el control completo de sus entrenamientos, reciban recomendaciones diarias adaptativas, configuren recordatorios y aprendan con datos curiosos científicos del running.
 
 ## 🚀 Cómo abrir la aplicación
-No requiere instalación de servidores ni bases de datos externas:
-1. Abre directamente el archivo [`index.html`](./index.html) con doble clic en cualquier navegador moderno (Chrome, Edge, Brave, Firefox).
-2. Todos tus datos se guardan automáticamente en el almacenamiento local de tu navegador (`localStorage`) y puedes exportar/importar copias de seguridad en `.json` desde el ícono de base de datos arriba a la derecha.
+No requiere servidores ni bases de datos externas:
+1. Abre directamente [`index.html`](./index.html) con doble clic en cualquier navegador moderno (Chrome, Edge, Brave, Safari, Firefox).
+2. En dispositivos móviles o escritorio puedes instalarla como **App (PWA)** desde el menú del navegador (*"Instalar aplicación"* o *"Agregar a pantalla de inicio"*).
 
-## ✨ Funcionalidades Principales
+## ✨ Novedades y Funcionalidades Principales
 
-1. **Perfil Fisiológico y Cálculo Automático de Zonas (`Perfil Fisiológico & Zonas`)**:
-   - Edad, peso, estatura, IMC, FC en reposo, FC máxima, FC de umbral de lactato, cadencia, VO2max, días disponibles, rotación de zapatillas e historial de molestias/lesiones.
-   - Cálculo automático de **VDOT (Fórmula Jack Daniels)** a partir de tus mejores marcas (5K, 10K, 21K, 42K) y zonas de entrenamiento por **Reserva Cardíaca (Karvonen)** y ritmos min/km (Z1 a Z5).
+1. **Diseño Económico Visualmente, Profesional y Amigable (Modo Claro + Oscuro)**:
+   - Interfaz limpia, clara y descansada para la vista por defecto (con interruptor de **Modo Oscuro Suave** arriba a la derecha).
+   - Barra de navegación superior en escritorio y **barra inferior tipo App Móvil** en pantallas pequeñas.
 
-2. **Objetivos y Predictor de Carrera (`Objetivos & Retos`)**:
-   - Fija carreras objetivo (prioridad A, B o C) con fecha, distancia y tiempo meta.
-   - Calcula el ritmo objetivo requerido, el VDOT necesario para lograrlo y la proyección actual de tus tiempos equivalentes en 5K, 10K, Media Maratón y Maratón.
+2. **Sistema Multi-Corredor Local (`Cambiar Usuario / Gestionar Corredores`)**:
+   - Permite que **varias personas** utilicen la aplicación en el mismo navegador con sus propios datos completamente independientes (perfil fisiológico, calendario, récords, recordatorios, objetivos y favoritos).
+   - Incluye asistente rápido para crear nuevos perfiles con color distintivo y plan semanal base opcional.
+   - Respaldo `.json` tanto de **todos los corredores** como de un **corredor individual**.
 
-3. **Organizador Semanal y Bitácora Comparativa (`Calendario y Entrenamientos`)**:
-   - Vista de calendario de 7 días (Lunes a Domingo) + tabla filtrable.
-   - Registra para cada sesión lo **Planeado por Gemini** vs lo **Realmente Completado** (distancia real, tiempo, ritmo autocalculado, pulsaciones medias, esfuerzo percibido **RPE 1-10** y notas/sensaciones).
+3. **Recomendaciones Diarias según el Progreso Registrado**:
+   - Calcula tu **Índice de Disposición Diaria (%)** analizando tus entrenamientos recientes, esfuerzo percibido (RPE), sesiones modificadas, regla de polarización 80/20 e historial de molestias.
+   - Genera 4 bloques diarios accionables:
+     1. *Enfoque y Ritmo de Hoy*
+     2. *Lectura de Fatiga y Carga*
+     3. *Prevención Biomecánica y Cadencia*
+     4. *Hidratación y Nutrición de la Sesión*
 
-4. **Mapa Visual de Adaptaciones Fisiológicas (`¿Qué Mejora Cada Entrenamiento?`)**:
-   - Gráfica Radar interactiva que compara los 6 sistemas fisiológicos que desarrolla cada tipo de sesión:
-     - *Base Aeróbica y Capilares*
-     - *Umbral de Lactato*
-     - *Potencia VO2 Máx*
-     - *Economía de Carrera*
-     - *Fuerza Muscular / Tendinosa*
-     - *Resistencia y Glucógeno*
-   - Compara cada tipo de sesión contra tu **Estímulo Acumulado Real** (calculado a partir de los entrenamientos que ya completaste) y revisa tu balance de polarización **Regla 80/20**.
+4. **Recordatorios de Entrenamientos y Exportación a Calendario (`.ics`)**:
+   - Banner inteligente en el inicio cuando tienes una sesión pendiente hoy.
+   - Configura múltiples recordatorios por hora y días de la semana con **Notificaciones del Navegador** y alerta sonora suave.
+   - Descarga tu semana en formato universal `.ics` para añadir tus entrenamientos con alarma a **Google Calendar, Apple Calendar o Outlook** en tu teléfono.
 
-5. **Centro Gemini AI (`Centro Gemini AI`)**:
-   - **Opción A (Automática con API Key)**: Ingresa tu API Key de Google AI Studio (`gemini-2.5-flash` o `gemini-2.5-pro`) y con un clic en **"Auto-Ajustar Plan con API"** o **"Generar Próxima Semana con API"**, Gemini analizará tus desviaciones (sesiones modificadas, RPE alto, fatiga o mejoras de ritmo) y actualizará automáticamente los entrenamientos de tu calendario.
-   - **Opción B (Flujo Copiar / Pegar sin API Key)**: Con un clic genera el prompt estructurado con todo tu contexto fisiológico y tus últimos entrenamientos completados, pégalo en tu chat habitual de Gemini, y pega la respuesta de Gemini de vuelta en la app para aplicar los entrenamientos ajustados a tu calendario.
+5. **Cápsulas y Biblioteca de Datos Curiosos del Running**:
+   - Widget interactivo del **"Dato Curioso del Día"** con consejo práctico aplicable, botón para explorar más datos y guardado en **Favoritos ⭐**.
+   - Enciclopedia completa filtrable por *Fisiología*, *Biomecánica*, *Nutrición*, *Entrenamiento* e *Historia*, más generador de nuevos datos curiosos con **Gemini IA**.
+
+6. **Fisiología, Escáner de Reloj (Gemini Vision) y Sincronización con Gemini AI**:
+   - Cálculo automático de **VDOT (Jack Daniels)** y zonas por **Reserva Cardíaca (Karvonen)**.
+   - Gráfica Radar de los 6 sistemas fisiológicos y balance 80/20.
+   - Subida o pegado (`Ctrl+V`) de capturas de pantalla de tu reloj deportivo (Garmin, Strava, Coros, Apple, Polar, Huawei) para extraer métricas automáticamente.
+   - Ajuste dinámico del plan semanal con Gemini API o mediante modo Copiar/Pegar Prompt.

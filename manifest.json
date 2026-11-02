@@ -1,0 +1,17 @@
+{
+  "name": "RunPulse AI — Control de Running & Entrenador Personal",
+  "short_name": "RunPulse AI",
+  "description": "App y sitio web multicuenta local para seguimiento de entrenamientos de running, recordatorios, recomendaciones diarias, datos curiosos y entrenador adaptativo con Gemini AI.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23059669'/><path d='M18 54h16l10-26 14 46 10-20h14' stroke='white' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
