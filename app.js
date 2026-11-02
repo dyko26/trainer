@@ -2580,6 +2580,7 @@ function renderDashboard() {
   renderDashboardCharts();
   renderBanisterMonitor();
   renderTrophiesShowcase();
+  updateInjuryDashboardBadge();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -2949,6 +2950,14 @@ function openWorkoutModal(workoutId = null, defaultDate = null) {
     document.getElementById('wmNotes').value = w.notes || '';
     currentModalScreenshots = Array.isArray(w.screenshots) ? [...w.screenshots] : [];
     deleteBtn.classList.remove('hidden');
+    const shareBtn = document.getElementById('wmShareBtn');
+    if (shareBtn) {
+      if (w.status === 'completed' || w.status === 'modified' || Number(w.actualKm) > 0) {
+        shareBtn.classList.remove('hidden');
+      } else {
+        shareBtn.classList.add('hidden');
+      }
+    }
   } else {
     document.getElementById('wmId').value = '';
     document.getElementById('wmDate').value = defaultDate || getLocalISODate(0);
@@ -2973,6 +2982,8 @@ function openWorkoutModal(workoutId = null, defaultDate = null) {
     document.getElementById('wmNotes').value = '';
     currentModalScreenshots = [];
     deleteBtn.classList.add('hidden');
+    const shareBtn = document.getElementById('wmShareBtn');
+    if (shareBtn) shareBtn.classList.add('hidden');
   }
 
   renderModalScreenshotsGallery();
@@ -3943,6 +3954,10 @@ window.addEventListener('DOMContentLoaded', () => {
       closeTrophiesModal();
       closeRoutineTimerModal();
       closeAudioCoachModal();
+      closePaceBandModal();
+      closeInjuryTrackerModal();
+      closeVamModal();
+      closeStoryCardModal();
     }
   });
 });
@@ -6021,4 +6036,783 @@ function toggleAudioCoachSound() {
     icon.className = `w-3.5 h-3.5 ${audioCoachState.voiceEnabled ? 'text-indigo-600' : 'text-slate-400'}`;
   }
   if (window.lucide) lucide.createIcons();
+}
+
+// ============================================================================
+// FEATURE 2: PULSERA DE RITMO & ESTRATEGIA DE SPLITS PARA CARRERA (PACE BAND)
+// ============================================================================
+
+function openPaceBandModal() {
+  const modal = document.getElementById('paceBandModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Pre-cargar valores desde el objetivo activo
+  const sortedGoals = [...appState.goals].sort((a, b) => a.date.localeCompare(b.date));
+  const primaryGoal = sortedGoals[0];
+  if (primaryGoal) {
+    const distSelect = document.getElementById('pbDistanceSelect');
+    if (distSelect) {
+      if (primaryGoal.distanceKm >= 40) distSelect.value = '42.195';
+      else if (primaryGoal.distanceKm >= 28) distSelect.value = '30';
+      else if (primaryGoal.distanceKm >= 20) distSelect.value = '21.0975';
+      else if (primaryGoal.distanceKm >= 14) distSelect.value = '15';
+      else if (primaryGoal.distanceKm >= 9) distSelect.value = '10';
+      else distSelect.value = '5';
+    }
+    const timeInput = document.getElementById('pbTargetTimeInput');
+    if (timeInput && primaryGoal.targetTime) {
+      timeInput.value = primaryGoal.targetTime;
+    }
+  }
+
+  generatePaceBand();
+  if (window.lucide) lucide.createIcons();
+}
+
+function closePaceBandModal() {
+  const modal = document.getElementById('paceBandModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function generatePaceBand() {
+  const distSelect = document.getElementById('pbDistanceSelect');
+  const timeInput = document.getElementById('pbTargetTimeInput');
+  const stratSelect = document.getElementById('pbStrategySelect');
+  const intSelect = document.getElementById('pbIntervalSelect');
+
+  if (!distSelect || !timeInput) return;
+
+  const totalKm = parseFloat(distSelect.value) || 21.0975;
+  const targetSec = parseTimeToSeconds(timeInput.value) || (totalKm * 315);
+  const strategy = stratSelect ? stratSelect.value : 'negative';
+  const intervalKm = parseInt(intSelect ? intSelect.value : '1', 10) || 1;
+
+  const avgPaceSec = targetSec / totalKm;
+
+  // Factores según estrategia
+  let firstHalfMult = 1.0;
+  let secondHalfMult = 1.0;
+  if (strategy === 'negative') {
+    firstHalfMult = 1.015; // 1.5% más lento en primera mitad
+    secondHalfMult = 0.985; // 1.5% más rápido en segunda mitad
+  } else if (strategy === 'progressive') {
+    firstHalfMult = 1.03;  // 3% más lento al inicio
+    secondHalfMult = 0.97;
+  }
+
+  const p1Pace = avgPaceSec * firstHalfMult;
+  const p2Pace = avgPaceSec * secondHalfMult;
+
+  // Actualizar KPIs de resumen
+  const avgPaceEl = document.getElementById('pbAvgPace');
+  const p1El = document.getElementById('pbFirstHalfPace');
+  const p2El = document.getElementById('pbSecondHalfPace');
+  const advEl = document.getElementById('pbStrategyAdvice');
+
+  if (avgPaceEl) avgPaceEl.textContent = `${formatSecondsToTime(avgPaceSec)} min/km`;
+  if (p1El) p1El.textContent = `${formatSecondsToTime(p1Pace)} min/km`;
+  if (p2El) p2El.textContent = `${formatSecondsToTime(p2Pace)} min/km`;
+  if (advEl) {
+    advEl.textContent = strategy === 'negative' ? 'Split Negativo (-1.5%)' : (strategy === 'progressive' ? 'Progresivo Fuerte (-3%)' : 'Ritmo Parejo Uniforme');
+  }
+
+  // Generar filas de la Pulsera (Pace Band)
+  const container = document.getElementById('pbWristbandContainer');
+  if (!container) return;
+
+  const milestones = [];
+  let cumSec = 0;
+  const midPoint = totalKm / 2;
+
+  // Calcular segundo a segundo o km a km
+  for (let k = 1; k <= Math.floor(totalKm); k++) {
+    const isFirstHalf = k <= midPoint;
+    const kmPaceSec = strategy === 'even'
+      ? avgPaceSec
+      : (isFirstHalf ? p1Pace : p2Pace);
+    cumSec += kmPaceSec;
+
+    if (k % intervalKm === 0 || k === Math.floor(totalKm)) {
+      milestones.push({
+        km: k,
+        kmLabel: `Km ${k}`,
+        paceThisKm: formatSecondsToTime(kmPaceSec),
+        cumTime: formatSecondsToTime(cumSec, totalKm >= 15),
+        isMid: Math.abs(k - midPoint) < 1,
+        isGel: k === 10 || k === 20 || k === 30,
+        isWater: k === 5 || k === 15 || k === 25 || k === 35
+      });
+    }
+  }
+
+  // Si la distancia tiene fracción (ej. 21.0975 o 42.195), agregar el hito de meta final
+  const remainder = totalKm - Math.floor(totalKm);
+  if (remainder > 0.05) {
+    const finalSec = targetSec;
+    milestones.push({
+      km: totalKm,
+      kmLabel: `Meta (${totalKm.toFixed(1)}k)`,
+      paceThisKm: formatSecondsToTime(p2Pace),
+      cumTime: formatSecondsToTime(finalSec, totalKm >= 15),
+      isFinish: true
+    });
+  }
+
+  container.innerHTML = `
+    <div class="grid grid-cols-12 px-3 py-2 bg-slate-100/80 dark:bg-slate-800/80 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 sticky top-0">
+      <div class="col-span-3">Hito / Km</div>
+      <div class="col-span-3 text-center">Ritmo Tramo</div>
+      <div class="col-span-3 text-center">Tiempo Acumulado</div>
+      <div class="col-span-3 text-right">Estrategia / Fuel</div>
+    </div>
+    ${milestones.map((m) => `
+      <div class="grid grid-cols-12 px-3 py-2.5 items-center text-xs wristband-row ${m.isFinish ? 'bg-emerald-50/60 dark:bg-emerald-950/20 font-bold' : ''}">
+        <div class="col-span-3 font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+          ${m.isFinish ? '<i data-lucide="flag" class="w-3.5 h-3.5 text-emerald-600"></i>' : ''}
+          <span>${m.kmLabel}</span>
+        </div>
+        <div class="col-span-3 text-center font-mono text-slate-600 dark:text-slate-300">
+          ${m.paceThisKm} /km
+        </div>
+        <div class="col-span-3 text-center font-mono font-bold ${m.isFinish ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}">
+          ${m.cumTime}
+        </div>
+        <div class="col-span-3 text-right text-[11px]">
+          ${m.isFinish
+            ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">¡Llegada!</span>'
+            : (m.isGel
+                ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.2 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300"><i data-lucide="zap" class="w-3 h-3"></i> Gel + Agua</span>'
+                : (m.isWater
+                    ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.2 rounded-full bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300"><i data-lucide="droplet" class="w-3 h-3"></i> Agua</span>'
+                    : '<span class="text-slate-400">Paso firme</span>'
+                  )
+              )
+          }
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function copyPaceBandToClipboard() {
+  const distSelect = document.getElementById('pbDistanceSelect');
+  const timeInput = document.getElementById('pbTargetTimeInput');
+  const p1El = document.getElementById('pbFirstHalfPace');
+  const p2El = document.getElementById('pbSecondHalfPace');
+
+  const text = `🎯 Pulsera de Ritmo (Pace Band) — RunPulse AI\n` +
+    `• Distancia: ${distSelect ? distSelect.options[distSelect.selectedIndex].text : 'Carrera'}\n` +
+    `• Tiempo Objetivo: ${timeInput ? timeInput.value : ''}\n` +
+    `• Paso 1ª Mitad: ${p1El ? p1El.textContent : ''}\n` +
+    `• Paso 2ª Mitad: ${p2El ? p2El.textContent : ''}\n` +
+    `Estrategia calculada para ${appState.profile.name || 'Corredor'}.`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('¡Tiempos de pulsera copiados al portapapeles!');
+  }).catch(() => {
+    showToast('Pulsera lista para visualizar.');
+  });
+}
+
+// ============================================================================
+// FEATURE 4: MAPA CORPORAL & PREVENCIÓN DE LESIONES (PREHAB)
+// ============================================================================
+
+const INJURY_ANATOMICAL_ZONES = {
+  aquiles: {
+    id: 'aquiles',
+    name: 'Tendón de Aquiles',
+    icon: 'activity',
+    badge: 'Tendón',
+    protocolTitle: 'Protocolo de Descarga Excéntrica de Alfredson',
+    protocolText: 'Baja talones de forma excéntrica y controlada sobre un escalón (rodilla recta y rodilla a 30°). 3 series de 15 repeticiones sin rebotar. Evita cuestas pronunciadas y series de velocidad pura hasta que la rigidez matutina desaparezca.'
+  },
+  soleus: {
+    id: 'soleus',
+    name: 'Sóleo / Gemelo Profundo',
+    icon: 'target',
+    badge: 'Músculo',
+    protocolTitle: 'Liberación Miofascial & Sóleo Aislado',
+    protocolText: 'Automasaje con pelota dura o rodillo en la parte baja del gemelo interno. Realiza elevaciones de talón con flexión de 30° y estiramientos pasivos contra pared manteniendo el talón clavado al suelo.'
+  },
+  knee: {
+    id: 'knee',
+    name: 'Rodilla / Tendón Rotuliano',
+    icon: 'shield',
+    badge: 'Articulación',
+    protocolTitle: 'Isometría de Cuádriceps & Cadena Posterior',
+    protocolText: 'Sentadillas isométricas en pared (Wall Sit) a 60-90° sosteniendo 45 segundos. Fortalece glúteo medio para evitar el colapso en valgo y reduce el drop excesivo de la zancada aumentando la cadencia a 175+ spm.'
+  },
+  itband: {
+    id: 'itband',
+    name: 'Cintilla Iliotibial (Banda)',
+    icon: 'zap',
+    badge: 'Fascia Lateral',
+    protocolTitle: 'Liberación del Tensor de Fascia Lata & Glúteo Medio',
+    protocolText: 'No masajees directamente la inserción en la rodilla. Masajea el glúteo y la cadera con foam roller. Realiza almejas (clamshells) con banda elástica y monster walks para estabilizar la pelvis.'
+  },
+  plantar: {
+    id: 'plantar',
+    name: 'Fascia Plantar / Talón',
+    icon: 'footprints',
+    badge: 'Arco Plantar',
+    protocolTitle: 'Crioterapia Rodada & Extensión del Hallux',
+    protocolText: 'Rueda una botella de agua congelada bajo el arco del pie durante 10 minutos. Estira la fascia traccionando los dedos hacia la tibia. No andes descalzo sobre superficies duras mientras haya inflamación aguda.'
+  },
+  shin: {
+    id: 'shin',
+    name: 'Periostio Tibial (Espinilla)',
+    icon: 'alert-triangle',
+    badge: 'Periostitis',
+    protocolTitle: 'Amortiguación & Tibial Anterior',
+    protocolText: 'Sustituye inmediatamente el asfalto por césped o pista de tierra. Marcha de talones con puntas levantadas (3x30s). Aplica hielo local 15 min tras entrenar y revisa el kilometraje de tus zapatillas.'
+  },
+  hamstring: {
+    id: 'hamstring',
+    name: 'Isquiotibiales / Glúteo',
+    icon: 'heart-pulse',
+    badge: 'Cadena Posterior',
+    protocolTitle: 'Fuerza Excéntrica Unilateral & Bisagra',
+    protocolText: 'Peso muerto rumano unilateral controlado (RDL). Evita estiramientos balísticos violentos. Asegura un apoyo de pie debajo de tu centro de gravedad (evita el "overstriding" o talonamiento excesivo).'
+  },
+  hip: {
+    id: 'hip',
+    name: 'Cadera / Psoas Ilíaco',
+    icon: 'compass',
+    badge: 'Flexores',
+    protocolTitle: 'Apertura de Cadera & Zancada Baja',
+    protocolText: 'Estiramiento del psoas en lunge bajo contrayendo el glúteo para inducir inhibición recíproca. Ejercicios de puente de glúteo y planchas abdominales para corregir la anteversión pélvica excesiva.'
+  }
+};
+
+let activeSelectedInjuryZone = 'aquiles';
+
+function openInjuryTrackerModal() {
+  const modal = document.getElementById('injuryTrackerModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  renderInjuryTracker();
+}
+
+function closeInjuryTrackerModal() {
+  const modal = document.getElementById('injuryTrackerModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function selectInjuryZone(zoneKey) {
+  if (!INJURY_ANATOMICAL_ZONES[zoneKey]) zoneKey = 'aquiles';
+  activeSelectedInjuryZone = zoneKey;
+  renderInjuryZoneChips();
+  renderInjuryProtocolCard();
+}
+
+function updateInjuryLevelDisplay(val) {
+  const display = document.getElementById('injuryLevelDisplay');
+  if (!display) return;
+  const num = parseInt(val, 10) || 1;
+  let label = 'Leve';
+  let badgeColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300';
+  if (num >= 7) {
+    label = 'Dolor Agudo';
+    badgeColor = 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300';
+  } else if (num >= 4) {
+    label = 'Molestia Moderada';
+    badgeColor = 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300';
+  }
+  display.textContent = `${num} / 10 (${label})`;
+  display.className = `font-bold text-sm font-mono px-2 py-0.5 rounded-lg ${badgeColor}`;
+}
+
+function renderInjuryZoneChips() {
+  const container = document.getElementById('injuryZoneChipsContainer');
+  if (!container) return;
+
+  container.innerHTML = Object.keys(INJURY_ANATOMICAL_ZONES).map((key) => {
+    const z = INJURY_ANATOMICAL_ZONES[key];
+    const isSelected = key === activeSelectedInjuryZone;
+    return `
+      <button type="button" onclick="selectInjuryZone('${key}')" class="anatomical-chip p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all ${
+        isSelected
+          ? 'active shadow-sm'
+          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+      }">
+        <span class="text-xs font-bold truncate block">${z.name}</span>
+        <span class="text-[10px] opacity-70 mt-1 block">${z.badge}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function renderInjuryProtocolCard() {
+  const card = document.getElementById('injuryPrehabProtocolCard');
+  if (!card) return;
+  const z = INJURY_ANATOMICAL_ZONES[activeSelectedInjuryZone] || INJURY_ANATOMICAL_ZONES.aquiles;
+  card.innerHTML = `
+    <div class="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+      <i data-lucide="shield-check" class="w-4 h-4 text-amber-600 dark:text-amber-400"></i>
+      <span>${z.protocolTitle}</span>
+    </div>
+    <p class="text-slate-600 dark:text-slate-300 leading-relaxed">${z.protocolText}</p>
+  `;
+  if (window.lucide) lucide.createIcons();
+}
+
+function saveInjuryLogEntry() {
+  const range = document.getElementById('injuryLevelRange');
+  const notesInput = document.getElementById('injuryNotesInput');
+  const level = parseInt(range ? range.value : '2', 10) || 2;
+  const notes = notesInput ? notesInput.value.trim() : '';
+
+  if (!Array.isArray(appState.injuryLogs)) {
+    appState.injuryLogs = [];
+  }
+
+  const zone = INJURY_ANATOMICAL_ZONES[activeSelectedInjuryZone] || INJURY_ANATOMICAL_ZONES.aquiles;
+
+  appState.injuryLogs.unshift({
+    id: `inj-${Date.now()}`,
+    date: getLocalISODate(0),
+    zoneKey: activeSelectedInjuryZone,
+    zoneName: zone.name,
+    level,
+    notes: notes || 'Sin notas adicionales'
+  });
+
+  if (notesInput) notesInput.value = '';
+  saveState();
+  renderInjuryTracker();
+  updateInjuryDashboardBadge();
+  showToast(`Molestia en ${zone.name} registrada`);
+}
+
+function deleteInjuryLog(id) {
+  if (!Array.isArray(appState.injuryLogs)) return;
+  appState.injuryLogs = appState.injuryLogs.filter((item) => item.id !== id);
+  saveState();
+  renderInjuryTracker();
+  updateInjuryDashboardBadge();
+  showToast('Registro eliminado');
+}
+
+function clearAllInjuryLogs() {
+  if (confirm('¿Limpiar todo el historial de molestias musculares?')) {
+    appState.injuryLogs = [];
+    saveState();
+    renderInjuryTracker();
+    updateInjuryDashboardBadge();
+    showToast('Historial de molestias limpiado');
+  }
+}
+
+function renderInjuryTracker() {
+  renderInjuryZoneChips();
+  renderInjuryProtocolCard();
+
+  const list = document.getElementById('injuryLogsList');
+  if (!list) return;
+
+  const logs = Array.isArray(appState.injuryLogs) ? appState.injuryLogs : [];
+  if (logs.length === 0) {
+    list.innerHTML = `<p class="text-xs text-slate-400 italic p-3 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">No tienes molestias activas registradas. ¡Excelente estado osteomuscular!</p>`;
+    return;
+  }
+
+  list.innerHTML = logs.map((log) => `
+    <div class="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 text-xs">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <strong class="text-slate-900 dark:text-white">${log.zoneName}</strong>
+          <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+            log.level >= 7
+              ? 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300'
+              : (log.level >= 4 ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300')
+          }">${log.level}/10</span>
+          <span class="text-[10px] text-slate-400">${formatShortSpanishDate(log.date)}</span>
+        </div>
+        <p class="text-slate-500 dark:text-slate-400 truncate mt-0.5">${log.notes}</p>
+      </div>
+      <button type="button" onclick="deleteInjuryLog('${log.id}')" title="Marcar como resuelto" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition">
+        <i data-lucide="check" class="w-4 h-4"></i>
+      </button>
+    </div>
+  `).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function updateInjuryDashboardBadge() {
+  const badge = document.getElementById('injuryTrackerAlertBadge');
+  if (!badge) return;
+  const logs = Array.isArray(appState.injuryLogs) ? appState.injuryLogs : [];
+  const highLogs = logs.filter((l) => l.level >= 4);
+  if (highLogs.length > 0) {
+    badge.textContent = `${highLogs.length} Alerta${highLogs.length > 1 ? 's' : ''}`;
+    badge.className = 'text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300';
+  } else if (logs.length > 0) {
+    badge.textContent = `${logs.length} Leve`;
+    badge.className = 'text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300';
+  } else {
+    badge.textContent = '0 Alertas';
+    badge.className = 'text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300';
+  }
+}
+
+// ============================================================================
+// FEATURE 6: CALCULADORA DE TEST VAM (VELOCIDAD AERÓBICA MÁXIMA)
+// ============================================================================
+
+function openVamModal() {
+  const modal = document.getElementById('vamModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  calculateVam();
+}
+
+function closeVamModal() {
+  const modal = document.getElementById('vamModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function calculateVam() {
+  const protoSelect = document.getElementById('vamProtocolSelect');
+  const distInput = document.getElementById('vamDistanceMeters');
+
+  const meters = parseFloat(distInput ? distInput.value : '1550') || 1550;
+  const proto = protoSelect ? protoSelect.value : '6min';
+
+  let vamKmH = 15.5;
+  if (proto === '6min') {
+    // Test de 6 min (Léger-Boucher): metros / 100 = VAM km/h
+    vamKmH = meters / 100;
+  } else {
+    // Test de Cooper (12 min): VO2max = (meters - 504.9) / 44.73 => VAM = VO2max / 3.5
+    const vo2max = Math.max(20, (meters - 504.9) / 44.73);
+    vamKmH = vo2max / 3.5;
+  }
+
+  vamKmH = Math.min(26, Math.max(8, vamKmH));
+  const vamMs = vamKmH / 3.6;
+  const vo2maxEst = Math.round(vamKmH * 3.5 * 10) / 10;
+  const pace100Sec = 3600 / vamKmH;
+
+  const resKmH = document.getElementById('vamResultKmH');
+  const resMs = document.getElementById('vamResultMs');
+  const p100 = document.getElementById('vamPace100');
+  const vo2El = document.getElementById('vamVo2max');
+
+  if (resKmH) resKmH.textContent = `${vamKmH.toFixed(1)} km/h`;
+  if (resMs) resMs.textContent = `${vamMs.toFixed(2)} m/s`;
+  if (p100) p100.textContent = formatSecondsToTime(pace100Sec);
+  if (vo2El) vo2El.textContent = vo2maxEst.toFixed(1);
+
+  // Tabla de porcentajes y series
+  const table = document.getElementById('vamPacesTable');
+  if (!table) return;
+
+  const zones = [
+    { pct: 110, name: 'Series Cortas (200m)', distTest: 200, tip: 'Potencia anaeróbica láctica y velocidad neuromuscular.' },
+    { pct: 105, name: 'Series Medias (400m)', distTest: 400, tip: 'Consumo máximo de oxígeno (techo aeróbico).' },
+    { pct: 100, name: 'VAM Pura (800m - 1000m)', distTest: 1000, tip: 'El ritmo exacto de tu velocidad aeróbica máxima.' },
+    { pct: 90, name: 'Umbral de Lactato (Tempo)', distTest: 1000, tip: 'Aclaramiento y reciclaje de lactato (ritmo 10K).' },
+    { pct: 82, name: 'Ritmo Media Maratón', distTest: 1000, tip: 'Velocidad crucero de fondo sin fatiga prematura.' },
+    { pct: 72, name: 'Rodaje Aeróbico Z2', distTest: 1000, tip: 'Base mitocondrial y quema de ácidos grasos (el 80%).' }
+  ];
+
+  table.innerHTML = zones.map((z) => {
+    const speed = vamKmH * (z.pct / 100);
+    const paceSec = 3600 / speed;
+    const splitTime = formatSecondsToTime((paceSec / 1000) * z.distTest);
+    return `
+      <div class="grid grid-cols-12 px-3 py-2.5 items-center">
+        <div class="col-span-4">
+          <strong class="text-slate-900 dark:text-white">${z.pct}% VAM</strong>
+          <span class="block text-[10px] text-slate-500">${z.name}</span>
+        </div>
+        <div class="col-span-4 text-center font-mono font-bold text-slate-800 dark:text-slate-200">
+          ${formatSecondsToTime(paceSec)} /km
+          <span class="block text-[10px] font-normal text-slate-400">Paso ${z.distTest}m: ${splitTime}</span>
+        </div>
+        <div class="col-span-4 text-right text-[11px] text-slate-500 dark:text-slate-400 truncate">
+          ${z.tip}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function applyVamPacesToProfile() {
+  const distInput = document.getElementById('vamDistanceMeters');
+  const protoSelect = document.getElementById('vamProtocolSelect');
+  const meters = parseFloat(distInput ? distInput.value : '1550') || 1550;
+  const proto = protoSelect ? protoSelect.value : '6min';
+
+  let vamKmH = proto === '6min' ? meters / 100 : (meters - 504.9) / 44.73 / 3.5;
+  vamKmH = Math.min(26, Math.max(8, vamKmH));
+  const vo2max = Math.round(vamKmH * 3.5 * 10) / 10;
+
+  if (appState.profile) {
+    appState.profile.vo2max = vo2max;
+    saveState();
+    refreshAllViews();
+    closeVamModal();
+    showToast(`¡Zonas VAM actualizadas! VO2max calibrado en ${vo2max} ml/kg/min.`);
+  }
+}
+
+// ============================================================================
+// FEATURE 5: FICHA DE ENTRENAMIENTO PARA COMPARTIR (STORY CARD)
+// ============================================================================
+
+let activeStoryWorkoutId = null;
+
+function openStoryCardModal(workoutId = null) {
+  const modal = document.getElementById('storyCardModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Poblar selector de entrenamientos
+  const select = document.getElementById('scWorkoutSelector');
+  if (select) {
+    const workouts = appState.workouts.filter(
+      (w) => w.type !== 'rest' && (Number(w.actualKm) > 0 || Number(w.plannedKm) > 0)
+    ).slice(-10).reverse();
+
+    if (workouts.length === 0) {
+      select.innerHTML = '<option value="">Sin sesiones para compartir</option>';
+    } else {
+      select.innerHTML = workouts.map((w) => `
+        <option value="${w.id}" ${workoutId === w.id ? 'selected' : ''}>
+          ${formatShortSpanishDate(w.date)} — ${w.title} (${w.actualKm || w.plannedKm} km)
+        </option>
+      `).join('');
+      activeStoryWorkoutId = workoutId || workouts[0].id;
+    }
+  }
+
+  renderStoryCardCanvas();
+}
+
+function closeStoryCardModal() {
+  const modal = document.getElementById('storyCardModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function openStoryCardFromActiveWorkout() {
+  const wmId = document.getElementById('wmId');
+  const workoutId = wmId ? wmId.value : null;
+  closeWorkoutModal();
+  openStoryCardModal(workoutId);
+}
+
+function renderStoryCardCanvas() {
+  const canvas = document.getElementById('storyCardCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const select = document.getElementById('scWorkoutSelector');
+  const themeSelect = document.getElementById('scThemeSelector');
+
+  const workoutId = select ? select.value : activeStoryWorkoutId;
+  const theme = themeSelect ? themeSelect.value : 'obsidian';
+
+  const w = appState.workouts.find((item) => item.id === workoutId) || appState.workouts[0] || {
+    title: 'Rodaje Aeróbico de Progresión',
+    actualKm: 10.5,
+    actualMin: 55,
+    actualPace: '05:14',
+    actualHR: 148,
+    actualRpe: 6,
+    date: getLocalISODate(0),
+    type: 'easy'
+  };
+
+  const width = canvas.width;
+  const height = canvas.height;
+
+  // 1. Fondos con Degradados Ricos
+  if (theme === 'emerald') {
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, '#064e3b');
+    grad.addColorStop(0.6, '#022c22');
+    grad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = grad;
+  } else if (theme === 'sunset') {
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, '#831843');
+    grad.addColorStop(0.5, '#4c0519');
+    grad.addColorStop(1, '#1e1b4b');
+    ctx.fillStyle = grad;
+  } else {
+    // Obsidian
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, '#0f172a');
+    grad.addColorStop(0.6, '#090d16');
+    grad.addColorStop(1, '#1e1b4b');
+    ctx.fillStyle = grad;
+  }
+  ctx.fillRect(0, 0, width, height);
+
+  // Círculo translúcido de luz
+  const glowGrad = ctx.createRadialGradient(width * 0.8, height * 0.2, 20, width * 0.8, height * 0.2, 300);
+  glowGrad.addColorStop(0, 'rgba(16, 185, 129, 0.18)');
+  glowGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+  ctx.fillStyle = glowGrad;
+  ctx.beginPath();
+  ctx.arc(width * 0.8, height * 0.2, 300, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 2. Encabezado de la Ficha
+  ctx.fillStyle = '#10b981';
+  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.letterSpacing = '3px';
+  ctx.fillText('RUNPULSE AI', 40, 55);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+  ctx.font = '13px Inter, sans-serif';
+  ctx.fillText(formatShortSpanishDate(w.date || getLocalISODate(0)).toUpperCase(), width - 180, 55);
+
+  // Línea divisoria
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(40, 75);
+  ctx.lineTo(width - 40, 75);
+  ctx.stroke();
+
+  // 3. Título de la Sesión
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 26px "Space Grotesk", sans-serif';
+  const cleanTitle = (w.title || 'Entrenamiento de Running').slice(0, 32);
+  ctx.fillText(cleanTitle, 40, 120);
+
+  // Tipo badge
+  const typeCatalog = WORKOUT_TYPES_CATALOG[w.type] || WORKOUT_TYPES_CATALOG.easy;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.beginPath();
+  ctx.roundRect(40, 138, 160, 26, 8);
+  ctx.fill();
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = 'bold 12px Inter, sans-serif';
+  ctx.fillText(typeCatalog.name.slice(0, 20), 52, 155);
+
+  // 4. Gran Número de Kilómetros
+  const distKm = parseFloat(w.actualKm || w.plannedKm || 0).toFixed(1);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 110px "Space Grotesk", sans-serif';
+  ctx.fillText(distKm, 35, 280);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.font = 'bold 24px Inter, sans-serif';
+  ctx.fillText('KILÓMETROS', 40, 315);
+
+  // 5. Caja de Métricas Principales (Ritmo, Tiempo, FC)
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+  ctx.beginPath();
+  ctx.roundRect(40, 350, width - 80, 160, 20);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.stroke();
+
+  // Columna 1: Ritmo
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('RITMO PROMEDIO', 70, 395);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 36px "Space Grotesk", sans-serif';
+  ctx.fillText(w.actualPace || '--:--', 70, 440);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('min/km', 70, 465);
+
+  // Columna 2: Tiempo
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('DURACIÓN', 245, 395);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 36px "Space Grotesk", sans-serif';
+  ctx.fillText(`${w.actualMin || w.plannedMin || 0}`, 245, 440);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('minutos', 245, 465);
+
+  // Columna 3: Pulsaciones
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('FC MEDIA', 415, 395);
+  ctx.fillStyle = '#f43f5e';
+  ctx.font = 'bold 36px "Space Grotesk", sans-serif';
+  ctx.fillText(w.actualHR > 0 ? `${w.actualHR}` : '--', 415, 440);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('ppm', 415, 465);
+
+  // 6. Fila de Detalles Secundarios (Cadencia, RPE, Desnivel)
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  ctx.beginPath();
+  ctx.roundRect(40, 530, width - 80, 70, 16);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.font = '13px Inter, sans-serif';
+  ctx.fillText(`⚡ Esfuerzo: RPE ${w.actualRpe || 6}/10`, 65, 572);
+  ctx.fillText(`⏱️ Cadencia: ${w.actualCadence > 0 ? w.actualCadence + ' spm' : '172 spm'}`, 245, 572);
+  ctx.fillText(`⛰️ +${w.actualElevation || 45} m`, 440, 572);
+
+  // 7. Pie de Tarjeta con Marca del Atleta
+  const runnerName = appState.profile.name || 'Dykembel';
+  ctx.fillStyle = '#10b981';
+  ctx.font = 'bold 15px Inter, sans-serif';
+  ctx.fillText(`Atleta: ${runnerName}`, 40, 680);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.font = 'italic 12px Inter, sans-serif';
+  ctx.fillText('"La constancia diaria supera al talento ocasional"', 40, 705);
+}
+
+function downloadStoryCardImage() {
+  const canvas = document.getElementById('storyCardCanvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = `RunPulse_Entreno_${getLocalISODate(0)}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('¡Ficha descargada en formato PNG!');
+}
+
+function copyStoryCardImage() {
+  const canvas = document.getElementById('storyCardCanvas');
+  if (!canvas || !navigator.clipboard) return;
+
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    try {
+      const item = new ClipboardItem({ 'image/png': blob });
+      navigator.clipboard.write([item]).then(() => {
+        showToast('¡Imagen copiada al portapapeles!');
+      }).catch(() => {
+        downloadStoryCardImage();
+      });
+    } catch (e) {
+      downloadStoryCardImage();
+    }
+  });
 }

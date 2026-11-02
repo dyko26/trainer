@@ -254,71 +254,140 @@
         <!-- Populated dynamically by JS -->
       </div>
 
-      <!-- ==================== ACCESOS RÁPIDOS: GELES, ENTRENADOR POR VOZ, RUTINAS Y TROFEOS ==================== -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <button onclick="openHydrationModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-              <i data-lucide="droplets" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span>Plan de Geles & Agua</span>
-                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300">3</span>
+      <!-- ==================== ACCESOS RÁPIDOS: HERRAMIENTAS CLAVE PARA EL ATLETA ==================== -->
+      <div class="space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <button onclick="openHydrationModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                <i data-lucide="droplets" class="w-5 h-5"></i>
               </div>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">Estrategia por km y clima</p>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Plan de Geles & Agua</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300">3</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Estrategia por km y clima</p>
+              </div>
             </div>
-          </div>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition"></i>
-        </button>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition"></i>
+          </button>
 
-        <button onclick="openAudioCoachModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-              <i data-lucide="volume-2" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span>Audio Coach Series</span>
-                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">6</span>
+          <button onclick="openAudioCoachModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                <i data-lucide="volume-2" class="w-5 h-5"></i>
               </div>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">Voz en vivo para repeticiones</p>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Audio Coach Series</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">6</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Voz en vivo para repeticiones</p>
+              </div>
             </div>
-          </div>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
-        </button>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
+          </button>
 
-        <button onclick="openRoutineTimerModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <i data-lucide="timer" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span>Rutinas con Cronómetro</span>
-                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">5</span>
+          <button onclick="openRoutineTimerModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <i data-lucide="timer" class="w-5 h-5"></i>
               </div>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">Activación, Sóleos y Movilidad</p>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Rutinas con Cronómetro</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">5</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Activación, Sóleos y Movilidad</p>
+              </div>
             </div>
-          </div>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition"></i>
-        </button>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition"></i>
+          </button>
 
-        <button onclick="openTrophiesModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <i data-lucide="award" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span>Vitrina de Trofeos</span>
-                <span id="unlockedTrophiesPill" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300">4</span>
+          <button onclick="openTrophiesModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <i data-lucide="award" class="w-5 h-5"></i>
               </div>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">Medallas y rachas ganadas</p>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Vitrina de Trofeos</span>
+                  <span id="unlockedTrophiesPill" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300">4</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Medallas y rachas ganadas</p>
+              </div>
             </div>
-          </div>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-amber-600 transition"></i>
-        </button>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-amber-600 transition"></i>
+          </button>
+        </div>
+
+        <!-- Fila 2: Splits/Pulsera, Molestias, Ficha y Test VAM -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <button onclick="openPaceBandModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                <i data-lucide="target" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Pulsera de Ritmo & Splits</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300">2</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Estrategia de paso y pacing</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-teal-600 transition"></i>
+          </button>
+
+          <button onclick="openInjuryTrackerModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <i data-lucide="shield-alert" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Molestias & Prehab</span>
+                  <span id="injuryTrackerAlertBadge" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300">4</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Prevención y mapa de dolor</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-rose-600 transition"></i>
+          </button>
+
+          <button onclick="openStoryCardModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                <i data-lucide="share-2" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Ficha para Compartir</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300">5</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Generador de Story en PNG</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition"></i>
+          </button>
+
+          <button onclick="openVamModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                <i data-lucide="gauge" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Test VAM & Zonas</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300">6</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Velocidad aeróbica máxima</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-orange-600 transition"></i>
+          </button>
+        </div>
       </div>
 
       <!-- ==================== NUEVO: RECOMENDACIÓN DIARIA SEGÚN PROGRESO REGISTRADO ==================== -->
@@ -1503,9 +1572,15 @@
         </div>
 
         <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
-          <button type="button" id="wmDeleteBtn" onclick="deleteWorkoutFromModal()" class="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-semibold hidden">
-            Eliminar Sesión
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="wmDeleteBtn" onclick="deleteWorkoutFromModal()" class="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-semibold hidden">
+              Eliminar Sesión
+            </button>
+            <button type="button" id="wmShareBtn" onclick="openStoryCardFromActiveWorkout()" class="px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center gap-1.5 hidden">
+              <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              <span>Ficha Compartible</span>
+            </button>
+          </div>
           <div class="flex items-center gap-2 ml-auto">
             <button type="button" onclick="closeWorkoutModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium">
               Cancelar
@@ -1990,6 +2065,323 @@
         <button type="button" onclick="closeAudioCoachModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-xs self-end sm:self-auto">
           Cerrar
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 7: PULSERA DE RITMO & ESTRATEGIA DE SPLITS (PACE BAND) ==================== -->
+  <div id="paceBandModal" onclick="if(event.target === this) closePaceBandModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-3xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+            <i data-lucide="target" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Pulsera de Ritmo & Estrategia de Splits (Pace Band)</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Estrategia táctica con Split Negativo y tiempos de paso para el día de carrera</p>
+          </div>
+        </div>
+        <button onclick="closePaceBandModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Controles de Configuración de Carrera -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50/70 dark:bg-slate-950/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800/80">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Distancia Objetivo</label>
+          <select id="pbDistanceSelect" onchange="generatePaceBand()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="5">5K (5.0 km)</option>
+            <option value="10">10K (10.0 km)</option>
+            <option value="15">15K Fondo (15.0 km)</option>
+            <option value="21.0975" selected>Media Maratón (21.1 km)</option>
+            <option value="42.195">Maratón Completa (42.2 km)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tiempo Meta (HH:MM:SS)</label>
+          <input type="text" id="pbTargetTimeInput" value="01:45:00" onchange="generatePaceBand()" placeholder="01:45:00" class="w-full rp-input px-3 py-2 text-xs font-mono" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Estrategia de Paso</label>
+          <select id="pbStrategySelect" onchange="generatePaceBand()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="negative" selected>Split Negativo (-1.5% inicio suave)</option>
+            <option value="even">Ritmo Parejo / Constante (Even Pace)</option>
+            <option value="progressive">Progresivo Fuerte (-3.0%)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Intervalo de Hitos</label>
+          <select id="pbIntervalSelect" onchange="generatePaceBand()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="1" selected>Cada 1 Kilómetro</option>
+            <option value="5">Cada 5 Kilómetros</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Resumen Táctico -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Ritmo Promedio</span>
+          <div id="pbAvgPace" class="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">--:-- min/km</div>
+          <span class="text-[10px] text-slate-400">Paso global requerido</span>
+        </div>
+
+        <div class="p-3 rounded-xl border border-teal-200/70 dark:border-teal-900/40 bg-teal-50/20 dark:bg-teal-950/10">
+          <span class="text-[11px] font-semibold text-teal-700 dark:text-teal-300 block">1ª Mitad (Paso 1)</span>
+          <div id="pbFirstHalfPace" class="text-base sm:text-lg font-bold font-mono text-teal-600 dark:text-teal-400 mt-1">--:-- min/km</div>
+          <span class="text-[10px] text-teal-600/80 dark:text-teal-400/80">Salida controlada</span>
+        </div>
+
+        <div class="p-3 rounded-xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10">
+          <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 block">2ª Mitad (Paso 2)</span>
+          <div id="pbSecondHalfPace" class="text-base sm:text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">--:-- min/km</div>
+          <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400/80">Aceleración y cierre</span>
+        </div>
+
+        <div class="p-3 rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/20 dark:bg-indigo-950/10">
+          <span class="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 block">Táctica Sugerida</span>
+          <div id="pbStrategyAdvice" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-1 truncate">Split Negativo</div>
+          <span class="text-[10px] text-slate-400">Ahorro de glucógeno</span>
+        </div>
+      </div>
+
+      <!-- Vista de la Pulsera de Carrera (Pace Band) y Tabla de Tiempos -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+            <i data-lucide="list-ordered" class="w-4 h-4 text-slate-500"></i>
+            <span>Tiempos de Paso Acumulados & Puntos de Nutrición</span>
+          </h4>
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">Pulsera imprimible o para captura</span>
+        </div>
+
+        <div id="pbWristbandContainer" class="max-h-64 overflow-y-auto pr-1 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="copyPaceBandToClipboard()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center gap-1.5 transition">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copiar Tiempos</span>
+        </button>
+        <button type="button" onclick="closePaceBandModal()" class="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-sm">
+          Listo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 8: MAPA CORPORAL & PREVENCIÓN DE LESIONES (PREHAB) ==================== -->
+  <div id="injuryTrackerModal" onclick="if(event.target === this) closeInjuryTrackerModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-2xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Mapa Corporal de Molestias & Prehab</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Detección temprana de sobrecargas y protocolos de descarga muscular</p>
+          </div>
+        </div>
+        <button onclick="closeInjuryTrackerModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Selector Anatómico de Zona Afectada -->
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Seleccionar Zona con Tensión o Molestia</label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="injuryZoneChipsContainer">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Nivel de Molestia (Slider 1 a 10) -->
+      <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-slate-700 dark:text-slate-200">Intensidad de la Molestia (1 = Leve tirantez, 10 = Dolor agudo)</label>
+          <span id="injuryLevelDisplay" class="font-bold text-sm font-mono px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">2 / 10 (Leve)</span>
+        </div>
+        <input type="range" id="injuryLevelRange" min="1" max="10" value="2" oninput="updateInjuryLevelDisplay(this.value)" class="w-full accent-rose-600 cursor-pointer" />
+        <div class="flex justify-between text-[10px] text-slate-400">
+          <span>1-3: Tensión leve</span>
+          <span>4-6: Molestia moderada</span>
+          <span>7-10: Dolor limitante</span>
+        </div>
+        <div>
+          <input type="text" id="injuryNotesInput" placeholder="Ej. Tirantez al bajar escaleras o en los primeros 10 min de rodaje..." class="w-full rp-input px-3 py-2 text-xs" />
+        </div>
+        <div class="flex justify-end">
+          <button type="button" onclick="saveInjuryLogEntry()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            <span>Registrar Molestia</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Protocolo de Prehab & Descarga para la Zona Seleccionada -->
+      <div id="injuryPrehabProtocolCard" class="p-4 rounded-xl border border-amber-200/80 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/20 space-y-1.5 text-xs">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Historial de Molestias Registradas -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-900 dark:text-white">Molestias Activas</span>
+          <button type="button" onclick="clearAllInjuryLogs()" class="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Limpiar Todo</button>
+        </div>
+        <div id="injuryLogsList" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="closeInjuryTrackerModal()" class="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 9: CALCULADORA DE TEST VAM (VELOCIDAD AERÓBICA MÁXIMA) ==================== -->
+  <div id="vamModal" onclick="if(event.target === this) closeVamModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-2xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+            <i data-lucide="gauge" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Calculadora de Test VAM & Zonas de Potencia</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Velocidad Aeróbica Máxima mediante Test de 6 min o Test de Cooper (12 min)</p>
+          </div>
+        </div>
+        <button onclick="closeVamModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Configuración del Test -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 dark:bg-slate-950/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800/80">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Protocolo de Campo</label>
+          <select id="vamProtocolSelect" onchange="calculateVam()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="6min" selected>Test de 6 Minutos (Léger-Boucher - Directo)</option>
+            <option value="12min">Test de Cooper (12 Minutos continuo)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Metros Recorridos en el Test</label>
+          <input type="number" id="vamDistanceMeters" value="1550" step="10" oninput="calculateVam()" placeholder="1550" class="w-full rp-input px-3 py-2 text-xs font-mono" />
+        </div>
+      </div>
+
+      <!-- Métricas VAM Calculadas -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="p-3.5 rounded-xl border border-orange-200/70 dark:border-orange-900/40 bg-orange-50/20 dark:bg-orange-950/10 text-center">
+          <span class="text-[11px] font-semibold text-orange-700 dark:text-orange-300 block">Tu VAM</span>
+          <div id="vamResultKmH" class="text-2xl font-bold font-mono text-orange-600 dark:text-orange-400 mt-1">15.5 km/h</div>
+          <span id="vamResultMs" class="text-[10px] text-orange-600/80 dark:text-orange-400/80 block">4.31 m/s</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-sky-200/70 dark:border-sky-900/40 bg-sky-50/20 dark:bg-sky-950/10 text-center">
+          <span class="text-[11px] font-semibold text-sky-700 dark:text-sky-300 block">Ritmo 100% VAM</span>
+          <div id="vamPace100" class="text-2xl font-bold font-mono text-sky-600 dark:text-sky-400 mt-1">03:52</div>
+          <span class="text-[10px] text-slate-400">min/km</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10 text-center">
+          <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 block">VO2max Estimado</span>
+          <div id="vamVo2max" class="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">54.3</div>
+          <span class="text-[10px] text-slate-400">ml/kg/min</span>
+        </div>
+      </div>
+
+      <!-- Desglose de Ritmos de Series por % de VAM -->
+      <div class="space-y-2">
+        <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+          <i data-lucide="layers" class="w-4 h-4 text-slate-500"></i>
+          <span>Ritmos Exactos para Series y Entrenamientos</span>
+        </h4>
+        <div id="vamPacesTable" class="max-h-56 overflow-y-auto pr-1 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 text-xs">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="applyVamPacesToProfile()" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          <span>Aplicar Zonas a mi Perfil</span>
+        </button>
+        <button type="button" onclick="closeVamModal()" class="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 10: CREADOR DE FICHA DE ENTRENAMIENTO PARA COMPARTIR (STORY CARD) ==================== -->
+  <div id="storyCardModal" onclick="if(event.target === this) closeStoryCardModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-xl w-full p-5 sm:p-6 space-y-4 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+            <i data-lucide="share-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Ficha de Entrenamiento para Compartir</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Genera una tarjeta visual en alta definición para Stories o WhatsApp</p>
+          </div>
+        </div>
+        <button onclick="closeStoryCardModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Selector de Sesión y Estilo -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Entrenamiento a Compartir</label>
+          <select id="scWorkoutSelector" onchange="renderStoryCardCanvas()" class="w-full rp-input px-3 py-2 text-xs">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Estilo Visual</label>
+          <select id="scThemeSelector" onchange="renderStoryCardCanvas()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="obsidian" selected>Obsidian Dark (Elegante)</option>
+            <option value="emerald">Emerald Pro (Verde Deportivo)</option>
+            <option value="sunset">Sunset Runner (Cálido Atardecer)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Lienzo Canvas Preview -->
+      <div class="flex justify-center bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+        <canvas id="storyCardCanvas" width="600" height="750" class="max-h-[50vh] w-auto rounded-xl shadow-2xl object-contain"></canvas>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="copyStoryCardImage()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center gap-1.5 transition">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copiar Imagen</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeStoryCardModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-xs">
+            Cerrar
+          </button>
+          <button type="button" onclick="downloadStoryCardImage()" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Descargar PNG</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
