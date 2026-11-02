@@ -134,7 +134,7 @@
       </button>
       <button onclick="switchTab('goals')" id="tabBtn-goals" class="nav-tab flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm whitespace-nowrap">
         <i data-lucide="target" class="w-4 h-4"></i>
-        <span>Objetivos & Predictor</span>
+        <span>Planes por Distancia & Metas</span>
       </button>
       <button onclick="switchTab('profile')" id="tabBtn-profile" class="nav-tab flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm whitespace-nowrap">
         <i data-lucide="user-cog" class="w-4 h-4"></i>
@@ -247,6 +247,11 @@
           </div>
           <div id="kpiNextGoalCountdown" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Faltan -- días</div>
         </div>
+      </div>
+
+      <!-- ==================== NUEVO: BARRA DE PROGRESO MOTIVADORA & PLAN ACTIVO POR DISTANCIA ==================== -->
+      <div id="dashboardProgressBanner" class="rp-card p-5 sm:p-6 bg-gradient-to-r from-emerald-50/60 via-white to-sky-50/50 dark:from-emerald-950/25 dark:via-slate-900 dark:to-sky-950/20">
+        <!-- Populated dynamically by JS -->
       </div>
 
       <!-- ==================== NUEVO: RECOMENDACIÓN DIARIA SEGÚN PROGRESO REGISTRADO ==================== -->
@@ -610,13 +615,58 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 4: OBJETIVOS & RETOS ==================== -->
+    <!-- ==================== TAB 4: PLANES POR DISTANCIA, PROGRESO & OBJETIVOS ==================== -->
     <section id="tab-goals" class="tab-panel hidden space-y-6">
+
+      <!-- Barra de Progreso Motivadora Detallada en Pestaña Planes -->
+      <div id="goalsTabProgressBanner" class="rp-card p-5 sm:p-6">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Catálogo y Configurador de Planes Específicos por Distancia -->
+      <div id="distancePlansSection" class="rp-card p-5 sm:p-6 space-y-5">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <i data-lucide="route" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="font-display font-bold text-lg sm:text-xl text-slate-900 dark:text-white">
+                Planes Específicos por Distancia (5K · 10K · 15K · 21K · 42K)
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Elige tu distancia objetivo y nivel. Los ritmos (min/km) y zonas se ajustan automáticamente a tu capacidad aeróbica actual (VDOT).
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Enfoque del plan:</label>
+            <select id="planLevelSelector" onchange="renderDistancePlanShowcase()" class="rp-input px-3 py-2 text-xs font-semibold">
+              <option value="finisher">Completar con solidez (3-4 días/sem)</option>
+              <option value="improver" selected>Mejorar Marca Personal (5 días/sem)</option>
+              <option value="competitive">Rendimiento Competitivo (6 días/sem)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Botones de Selección de Distancia (5K, 10K, 15K, 21K, 42K) -->
+        <div id="distancePlanTabs" class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Detalle del Plan Seleccionado y Vista Previa de Sesiones -->
+        <div id="selectedDistancePlanDetail" class="space-y-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Mis Objetivos de Carrera -->
       <div class="rp-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="font-display font-bold text-lg text-slate-900 dark:text-white">Mis Objetivos de Carrera y Tiempos Meta</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400">
-            Define tus próximas carreras para que las recomendaciones diarias y Gemini ajusten tu entrenamiento.
+            Define tus próximas carreras para que la barra de progreso, las recomendaciones diarias y Gemini ajusten tu entrenamiento.
           </p>
         </div>
         <button onclick="openGoalModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm self-start sm:self-auto">

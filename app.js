@@ -2395,6 +2395,7 @@ function updateHeaderAndWelcomeBadges() {
 function renderDashboard() {
   updateHeaderAndWelcomeBadges();
   renderTodayReminderBanner();
+  renderMotivationalProgressBanners();
   renderDailyRecommendations();
   renderDashboardCuriousFact();
 
@@ -3310,6 +3311,9 @@ function renderPhysiologyMatrixTable() {
 // ============================================================================
 
 function renderGoalsTab() {
+  renderMotivationalProgressBanners();
+  renderDistancePlanShowcase();
+
   const container = document.getElementById('goalsGridContainer');
   const vdot = getRunnerVDOT(appState.profile);
   const predSpan = document.getElementById('predictorVdotSpan');
@@ -3890,3 +3894,499 @@ window.addEventListener('DOMContentLoaded', () => {
   startBackgroundReminderWatcher();
   if (window.lucide) lucide.createIcons();
 });
+
+// ============================================================================
+// PLANES ESPECÍFICOS POR DISTANCIA (5K, 10K, 15K, 21K, 42K) & BARRA MOTIVADORA
+// ============================================================================
+
+let selectedDistancePlanKey = '21k';
+
+const DISTANCE_TRAINING_PLANS = {
+  '5k': {
+    id: '5k',
+    label: '5K',
+    name: 'Plan 5K Velocidad & VO2max',
+    distanceKm: 5.0,
+    durationWeeks: 4,
+    badge: 'Rapidez & Potencia',
+    color: '#e11d48',
+    summary: 'Diseñado para elevar tu techo aeróbico (VO2max), mejorar la velocidad neuromuscular y sostener ritmos intensos sin caer en fatiga prematura.',
+    weeklyKmByLevel: { finisher: 22, improver: 32, competitive: 45 },
+    buildMicrocycle: (paces, mult) => [
+      { dayOffset: 0, dayName: 'Lunes', type: 'rest', title: 'Descanso Activo y Movilidad de Tobillos', km: 0, min: 20, pace: '--:--', zone: 'Recuperación', notes: 'Estiramientos dinámicos y liberación miofascial.' },
+      { dayOffset: 1, dayName: 'Martes', type: 'intervals', title: 'Series 6x400m a Ritmo 3K-5K (rec 90s trote)', km: +(6.5 * mult).toFixed(1), min: Math.round(35 * mult), pace: paces.z5, zone: 'Z5 (VO2max)', notes: 'Calentar 2km suaves + 6x400m rápidas pero controladas + 1.5km enfriamiento.' },
+      { dayOffset: 2, dayName: 'Miércoles', type: 'easy', title: 'Rodaje Regenerativo Suave Z1-Z2', km: +(5.0 * mult).toFixed(1), min: Math.round(28 * mult), pace: paces.z1, zone: 'Z1-Z2', notes: 'Trote muy cómodo para limpiar lactato del día anterior.' },
+      { dayOffset: 3, dayName: 'Jueves', type: 'tempo', title: '2km Z2 + 3km Tempo Umbral + 1km Z1', km: +(6.0 * mult).toFixed(1), min: Math.round(32 * mult), pace: paces.z4, zone: 'Z4 (Umbral)', notes: 'Sostener ritmo fuerte pero constante en el bloque central.' },
+      { dayOffset: 4, dayName: 'Viernes', type: 'strength', title: 'Fuerza Reactiva, Core y Pliometría Suave', km: 0, min: 35, pace: '--:--', zone: 'Neuromuscular', notes: 'Sentadilla unilateral, saltos suaves de cuerda y planchas.' },
+      { dayOffset: 5, dayName: 'Sábado', type: 'easy', title: 'Rodaje Aeróbico + 4 Rectas Progresivas de 80m', km: +(5.0 * mult).toFixed(1), min: Math.round(27 * mult), pace: paces.z2, zone: 'Z2', notes: 'Activar piernas y mejorar cadencia.' },
+      { dayOffset: 6, dayName: 'Domingo', type: 'long', title: 'Tirada Aeróbica Continua Z2', km: +(9.5 * mult).toFixed(1), min: Math.round(52 * mult), pace: paces.z2, zone: 'Z2', notes: 'Construye la base mitocondrial necesaria para recuperar entre series.' }
+    ]
+  },
+  '10k': {
+    id: '10k',
+    label: '10K',
+    name: 'Plan 10K Umbral & Resistencia',
+    distanceKm: 10.0,
+    durationWeeks: 6,
+    badge: 'Equilibrio Ideal',
+    color: '#d97706',
+    summary: 'El balance perfecto entre resistencia aeróbica y tolerancia al lactato. Ideal para bajar de 60, 50 o 40 minutos en 10 kilómetros.',
+    weeklyKmByLevel: { finisher: 28, improver: 38, competitive: 52 },
+    buildMicrocycle: (paces, mult) => [
+      { dayOffset: 0, dayName: 'Lunes', type: 'rest', title: 'Descanso y Movilidad de Cadera', km: 0, min: 20, pace: '--:--', zone: 'Recuperación', notes: 'Asimilación del fondo dominical.' },
+      { dayOffset: 1, dayName: 'Martes', type: 'easy', title: 'Rodaje Aeróbico Base Z2', km: +(7.0 * mult).toFixed(1), min: Math.round(38 * mult), pace: paces.z2, zone: 'Z2', notes: 'Ritmo conversacional fluido.' },
+      { dayOffset: 2, dayName: 'Miércoles', type: 'intervals', title: 'Series 5x1000m a Ritmo 10K (rec 90s)', km: +(8.5 * mult).toFixed(1), min: Math.round(44 * mult), pace: paces.z5, zone: 'Z4-Z5', notes: 'Sesión clave de potencia aeróbica específica para 10K.' },
+      { dayOffset: 3, dayName: 'Jueves', type: 'strength', title: 'Fuerza de Tren Inferior y Estabilidad', km: 0, min: 40, pace: '--:--', zone: 'Neuromuscular', notes: 'Foco en glúteos, isquios y sóleos.' },
+      { dayOffset: 4, dayName: 'Viernes', type: 'tempo', title: 'Cambios de Ritmo / Tempo 2x15 min Z4', km: +(8.0 * mult).toFixed(1), min: Math.round(41 * mult), pace: paces.z4, zone: 'Z3-Z4', notes: 'Enseña al cuerpo a reciclar lactato a alta velocidad.' },
+      { dayOffset: 5, dayName: 'Sábado', type: 'easy', title: 'Rodaje Suave Regenerativo', km: +(5.5 * mult).toFixed(1), min: Math.round(31 * mult), pace: paces.z1, zone: 'Z1-Z2', notes: 'Soltar piernas antes del domingo.' },
+      { dayOffset: 6, dayName: 'Domingo', type: 'long', title: 'Tirada Larga Aeróbica Progresiva', km: +(12.5 * mult).toFixed(1), min: Math.round(66 * mult), pace: paces.z2, zone: 'Z2', notes: 'Últimos 2 km ligeramente más alegres en Zona 3.' }
+    ]
+  },
+  '15k': {
+    id: '15k',
+    label: '15K',
+    name: 'Plan 15K Fuerza Aeróbica & Cuestas',
+    distanceKm: 15.0,
+    durationWeeks: 6,
+    badge: 'Puente a Fondo',
+    color: '#9333ea',
+    summary: 'Desarrolla fuerza específica en pendientes y solidez aeróbica para dominar carreras de 15K o preparar el salto hacia la Media Maratón.',
+    weeklyKmByLevel: { finisher: 32, improver: 42, competitive: 56 },
+    buildMicrocycle: (paces, mult) => [
+      { dayOffset: 0, dayName: 'Lunes', type: 'rest', title: 'Descanso Total o Estiramientos', km: 0, min: 15, pace: '--:--', zone: 'Recuperación', notes: 'Recuperación muscular.' },
+      { dayOffset: 1, dayName: 'Martes', type: 'easy', title: 'Rodaje Base Z2 Constante', km: +(8.0 * mult).toFixed(1), min: Math.round(43 * mult), pace: paces.z2, zone: 'Z2', notes: 'Mantener cadencia sobre 172 spm.' },
+      { dayOffset: 2, dayName: 'Miércoles', type: 'hills', title: 'Cuestas 8x200m Potencia + 3km Z2', km: +(7.5 * mult).toFixed(1), min: Math.round(42 * mult), pace: paces.z4, zone: 'Z4-Z5', notes: 'Subir con braceo firme y rodilla alta; bajar trotando muy suave.' },
+      { dayOffset: 3, dayName: 'Jueves', type: 'easy', title: 'Rodaje Suave de Asimilación', km: +(6.5 * mult).toFixed(1), min: Math.round(36 * mult), pace: paces.z1, zone: 'Z1-Z2', notes: 'Esfuerzo muy bajo (RPE 3-4).' },
+      { dayOffset: 4, dayName: 'Viernes', type: 'fartlek', title: 'Fartlek Piramidal (1-2-3-4-3-2-1 min en Z4)', km: +(9.0 * mult).toFixed(1), min: Math.round(46 * mult), pace: paces.z3, zone: 'Z2 a Z4', notes: 'Flexibilidad metabólica y cambios de ritmo.' },
+      { dayOffset: 5, dayName: 'Sábado', type: 'strength', title: 'Fuerza Preventiva Core & Sóleos', km: 0, min: 40, pace: '--:--', zone: 'Neuromuscular', notes: 'Protección articular para largas distancias.' },
+      { dayOffset: 6, dayName: 'Domingo', type: 'long', title: 'Tirada Larga 15K Controlada Z2', km: +(15.0 * mult).toFixed(1), min: Math.round(80 * mult), pace: paces.z2, zone: 'Z2', notes: 'Practicar hidratación en el minuto 40.' }
+    ]
+  },
+  '21k': {
+    id: '21k',
+    label: '21K Media Maratón',
+    name: 'Plan 21.1K Media Maratón Progresivo',
+    distanceKm: 21.0975,
+    durationWeeks: 8,
+    badge: 'Favorito Corredores',
+    color: '#059669',
+    summary: 'Combina volumen aeróbico en Zona 2, bloques de Umbral de Lactato (Tempo) y tiradas largas con cierre a ritmo de carrera para correr 21K con fuerza de principio a fin.',
+    weeklyKmByLevel: { finisher: 36, improver: 48, competitive: 64 },
+    buildMicrocycle: (paces, mult) => [
+      { dayOffset: 0, dayName: 'Lunes', type: 'rest', title: 'Descanso Activo y Rodillo de Espuma', km: 0, min: 20, pace: '--:--', zone: 'Recuperación', notes: 'Supercompensación post tirada larga.' },
+      { dayOffset: 1, dayName: 'Martes', type: 'easy', title: 'Rodaje Base Aeróbica Z2', km: +(8.5 * mult).toFixed(1), min: Math.round(45 * mult), pace: paces.z2, zone: 'Z2', notes: 'Construcción capilar sin fatiga.' },
+      { dayOffset: 2, dayName: 'Miércoles', type: 'tempo', title: '2km Z2 + 6km Tempo Umbral + 1.5km Z1', km: +(9.5 * mult).toFixed(1), min: Math.round(47 * mult), pace: paces.z4, zone: 'Z4 (Umbral)', notes: 'Entrenamiento estrella para sostener tu ritmo de Media Maratón.' },
+      { dayOffset: 3, dayName: 'Jueves', type: 'strength', title: 'Fuerza Específica Running & Core', km: 0, min: 40, pace: '--:--', zone: 'Neuromuscular', notes: 'Sentadilla búlgara, elevación de talones excéntrica y planchas.' },
+      { dayOffset: 4, dayName: 'Viernes', type: 'intervals', title: 'Series 5x1200m VO2max (rec 2 min)', km: +(9.0 * mult).toFixed(1), min: Math.round(45 * mult), pace: paces.z5, zone: 'Z5', notes: 'Mejora la economía de carrera a ritmos altos.' },
+      { dayOffset: 5, dayName: 'Sábado', type: 'easy', title: 'Rodaje Suave Regenerativo Pre-Fondo', km: +(6.5 * mult).toFixed(1), min: Math.round(36 * mult), pace: paces.z1, zone: 'Z1-Z2', notes: 'Mantener pulsaciones muy bajas.' },
+      { dayOffset: 6, dayName: 'Domingo', type: 'long', title: 'Tirada Larga 18K (Últimos 4km a Ritmo 21K)', km: +(18.0 * mult).toFixed(1), min: Math.round(94 * mult), pace: paces.z2, zone: 'Z2 -> Z3', notes: 'Probar gel energético o carbohidratos en el km 10.' }
+    ]
+  },
+  '42k': {
+    id: '42k',
+    label: '42K Maratón',
+    name: 'Plan 42.2K Maratón Especificidad & Glucógeno',
+    distanceKm: 42.195,
+    durationWeeks: 12,
+    badge: 'Gran Reto Fondo',
+    color: '#0284c7',
+    summary: 'Enfocado en expandir las reservas de glucógeno muscular, optimizar la oxidación de grasas en Zona 2-3 y fortalecer tendones para vencer el muro del km 32.',
+    weeklyKmByLevel: { finisher: 48, improver: 62, competitive: 80 },
+    buildMicrocycle: (paces, mult) => [
+      { dayOffset: 0, dayName: 'Lunes', type: 'rest', title: 'Descanso Total y Reposición de Glucógeno', km: 0, min: 20, pace: '--:--', zone: 'Recuperación', notes: 'Priorizar sueño e hidratación.' },
+      { dayOffset: 1, dayName: 'Martes', type: 'easy', title: 'Rodaje Aeróbico Z2 Extensivo', km: +(10.0 * mult).toFixed(1), min: Math.round(53 * mult), pace: paces.z2, zone: 'Z2', notes: 'Ritmo muy constante y económico.' },
+      { dayOffset: 2, dayName: 'Miércoles', type: 'tempo', title: 'Bloque Específico Ritmo Maratón (3km Z2 + 10km Z3)', km: +(13.0 * mult).toFixed(1), min: Math.round(64 * mult), pace: paces.z3, zone: 'Z3 (Ritmo Maratón)', notes: 'Memorizar biomecánica y consumo energético del ritmo objetivo.' },
+      { dayOffset: 3, dayName: 'Jueves', type: 'easy', title: 'Rodaje Regenerativo + Fuerza Core', km: +(8.0 * mult).toFixed(1), min: Math.round(45 * mult), pace: paces.z1, zone: 'Z1-Z2', notes: 'Trote muy suave para favorecer circulación.' },
+      { dayOffset: 4, dayName: 'Viernes', type: 'fartlek', title: 'Cambios de Ritmo 6x1km en Umbral Z4', km: +(10.0 * mult).toFixed(1), min: Math.round(50 * mult), pace: paces.z4, zone: 'Z4', notes: 'Mantener chispa aeróbica sin sobrecargar piernas.' },
+      { dayOffset: 5, dayName: 'Sábado', type: 'easy', title: 'Activación Suave Pre-Tirada Larga', km: +(7.0 * mult).toFixed(1), min: Math.round(38 * mult), pace: paces.z1, zone: 'Z1-Z2', notes: 'Cena rica en carbohidratos después de esta sesión.' },
+      { dayOffset: 6, dayName: 'Domingo', type: 'long', title: 'Tirada Larga Específica Maratón 26K', km: +(26.0 * mult).toFixed(1), min: Math.round(138 * mult), pace: paces.z2, zone: 'Z2 -> Z3', notes: 'Entrenar nutrición: 45-60g de carbohidratos por hora y electrolitos.' }
+    ]
+  }
+};
+
+function getRunnerPacesByVDOT(profile) {
+  const vdot = getRunnerVDOT(profile);
+  return {
+    z1: formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.62)),
+    z2: formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.70)),
+    z3: formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.79)),
+    z4: formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.87)),
+    z5: formatSecondsToTime(getPacePerKmForVDOTIntensity(vdot, 0.96))
+  };
+}
+
+// ============================================================================
+// CÁLCULO Y RENDERIZADO DE LA BARRA DE PROGRESO MOTIVADORA E HITOS
+// ============================================================================
+
+function computeMotivationalProgress() {
+  const workouts = (appState.workouts || []).filter((w) => w.type !== 'rest');
+  const completedWorkouts = workouts.filter(
+    (w) => w.status === 'completed' || w.status === 'modified'
+  );
+
+  const totalSessions = Math.max(workouts.length, 1);
+  const completedSessions = completedWorkouts.length;
+
+  const totalPlannedKm = workouts.reduce((s, w) => s + (Number(w.plannedKm) || 0), 0);
+  const totalActualKm = completedWorkouts.reduce((s, w) => s + (Number(w.actualKm) || 0), 0);
+
+  // Porcentaje combinado motivador (sesiones cumplidas y kilómetros logrados)
+  const sessionPct = (completedSessions / totalSessions) * 100;
+  const kmPct = totalPlannedKm > 0 ? (totalActualKm / totalPlannedKm) * 100 : sessionPct;
+  const progressPct = Math.min(100, Math.max(5, Math.round(sessionPct * 0.5 + kmPct * 0.5)));
+
+  const activePlan = appState.activePlan || {
+    key: '21k',
+    name: appState.goals?.[0]?.name || 'Plan Media Maratón 21.1K',
+    levelLabel: 'Mejorar Marca Personal',
+    distanceKm: appState.goals?.[0]?.distanceKm || 21.1
+  };
+
+  let motivationalQuote = '';
+  let levelTitle = '';
+  if (progressPct >= 90) {
+    levelTitle = '🏆 Nivel Élite: ¡Listo para Brillar en la Meta!';
+    motivationalQuote = 'Has construido el trabajo duro kilómetro a kilómetro. Confía en tu entrenamiento.';
+  } else if (progressPct >= 70) {
+    levelTitle = '🔥 Pico de Forma: Ritmo Específico Consolidado';
+    motivationalQuote = 'Ya superaste las tres cuartas partes del bloque. Tu corazón y tus piernas son mucho más eficientes.';
+  } else if (progressPct >= 45) {
+    levelTitle = '⚡ Mitad del Camino Superada: Constancia Imparable';
+    motivationalQuote = 'Cada sesión sumada multiplica tus mitocondrias y acerca tu tiempo objetivo.';
+  } else {
+    levelTitle = '🌱 Construyendo tu Base Aeróbica Paso a Paso';
+    motivationalQuote = 'El secreto del running no es correr un día al límite, sino encadenar semanas con constancia.';
+  }
+
+  const milestones = [
+    { pct: 25, icon: '🌱', label: '25% Base Aeróbica', unlocked: progressPct >= 25 },
+    { pct: 50, icon: '⚡', label: '50% Ecuador del Plan', unlocked: progressPct >= 50 },
+    { pct: 75, icon: '🔥', label: '75% Ritmo Específico', unlocked: progressPct >= 75 },
+    { pct: 100, icon: '🏆', label: '100% Listo para Meta', unlocked: progressPct >= 98 }
+  ];
+
+  return {
+    progressPct,
+    completedSessions,
+    totalSessions,
+    totalActualKm: totalActualKm.toFixed(1),
+    totalPlannedKm: totalPlannedKm.toFixed(1),
+    activePlan,
+    levelTitle,
+    motivationalQuote,
+    milestones
+  };
+}
+
+function buildProgressBannerHTML(showChangePlanBtn = true) {
+  const prog = computeMotivationalProgress();
+
+  return `
+    <div class="space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-sm">
+              Progreso de tu Plan
+            </span>
+            <span class="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+              ${prog.activePlan.name}
+            </span>
+          </div>
+          <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">
+            ${prog.levelTitle}
+          </h3>
+          <p class="text-xs text-slate-600 dark:text-slate-300">
+            "${prog.motivationalQuote}"
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 self-start md:self-auto">
+          <div class="text-right">
+            <div class="text-2xl sm:text-3xl font-display font-bold text-emerald-600 dark:text-emerald-400">
+              ${prog.progressPct}%
+            </div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">
+              ${prog.completedSessions}/${prog.totalSessions} sesiones · <strong>${prog.totalActualKm} km</strong> logrados
+            </div>
+          </div>
+          ${
+            showChangePlanBtn
+              ? `<button onclick="switchTab('goals'); scrollToElement('distancePlansSection')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition">
+                  <i data-lucide="route" class="w-4 h-4"></i>
+                  <span>Elegir Plan (5K-42K)</span>
+                </button>`
+              : ''
+          }
+        </div>
+      </div>
+
+      <!-- Barra de Progreso Motivadora Animada -->
+      <div class="space-y-2">
+        <div class="relative w-full h-4 bg-slate-200/90 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 shadow-inner">
+          <div
+            class="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 transition-all duration-700 relative"
+            style="width: ${prog.progressPct}%"
+          ></div>
+        </div>
+
+        <!-- Hitos / Medallas Desbloqueables -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+          ${prog.milestones
+            .map(
+              (m) => `
+              <div class="px-3 py-2 rounded-xl border text-xs flex items-center gap-2 transition ${
+                m.unlocked
+                  ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/40 text-emerald-900 dark:text-emerald-200 font-bold shadow-sm'
+                  : 'bg-white/60 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-400'
+              }">
+                <span class="text-base">${m.icon}</span>
+                <div class="truncate">
+                  <div class="truncate">${m.label}</div>
+                  <div class="text-[10px] font-normal ${m.unlocked ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+                    ${m.unlocked ? '✓ Desbloqueado' : 'En camino'}
+                  </div>
+                </div>
+              </div>
+            `
+            )
+            .join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderMotivationalProgressBanners() {
+  const dashBanner = document.getElementById('dashboardProgressBanner');
+  if (dashBanner) {
+    dashBanner.innerHTML = buildProgressBannerHTML(true);
+  }
+  const goalsBanner = document.getElementById('goalsTabProgressBanner');
+  if (goalsBanner) {
+    goalsBanner.innerHTML = buildProgressBannerHTML(false);
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============================================================================
+// SELECTOR Y GENERADOR DE PLANES ESPECÍFICOS POR DISTANCIA (5K A 42K)
+// ============================================================================
+
+function selectDistancePlan(planKey) {
+  selectedDistancePlanKey = planKey;
+  renderDistancePlanShowcase();
+}
+
+function renderDistancePlanShowcase() {
+  const tabsContainer = document.getElementById('distancePlanTabs');
+  const detailContainer = document.getElementById('selectedDistancePlanDetail');
+  if (!tabsContainer || !detailContainer) return;
+
+  const level = document.getElementById('planLevelSelector')?.value || 'improver';
+  const mult = level === 'finisher' ? 0.8 : level === 'competitive' ? 1.22 : 1.0;
+  const paces = getRunnerPacesByVDOT(appState.profile);
+  const vdot = getRunnerVDOT(appState.profile).toFixed(1);
+
+  // Renderizar pestañas de distancia (5K, 10K, 15K, 21K, 42K)
+  tabsContainer.innerHTML = Object.values(DISTANCE_TRAINING_PLANS)
+    .map((plan) => {
+      const isSelected = plan.id === selectedDistancePlanKey;
+      const isCurrentActive = appState.activePlan?.key === plan.id;
+      return `
+        <button
+          onclick="selectDistancePlan('${plan.id}')"
+          class="p-3 rounded-xl border text-left transition flex flex-col justify-between gap-1 ${
+            isSelected
+              ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-sm'
+              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
+          }"
+        >
+          <div class="flex items-center justify-between w-full">
+            <span class="font-display font-bold text-sm sm:text-base text-slate-900 dark:text-white">${plan.label}</span>
+            ${
+              isCurrentActive
+                ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white">Activo</span>`
+                : `<span class="w-2.5 h-2.5 rounded-full" style="background-color:${plan.color}"></span>`
+            }
+          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400">
+            ${plan.durationWeeks} semanas · ~${plan.weeklyKmByLevel[level]} km/sem
+          </div>
+        </button>
+      `;
+    })
+    .join('');
+
+  const plan = DISTANCE_TRAINING_PLANS[selectedDistancePlanKey] || DISTANCE_TRAINING_PLANS['21k'];
+  const sessions = plan.buildMicrocycle(paces, mult);
+  const totalWeekKm = sessions.reduce((s, item) => s + Number(item.km || 0), 0).toFixed(1);
+
+  detailContainer.innerHTML = `
+    <div class="rp-subtle-box p-4 sm:p-5 space-y-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold text-white" style="background-color:${plan.color}">
+              ${plan.badge}
+            </span>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Duración recomendada: <strong>${plan.durationWeeks} semanas</strong> · Volumen sem: <strong>${totalWeekKm} km</strong> · Calibrado a tu VDOT (${vdot})
+            </span>
+          </div>
+          <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">
+            ${plan.name}
+          </h3>
+          <p class="text-xs text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
+            ${plan.summary}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onclick="activateDistancePlanForRunner('${plan.id}', 1)"
+            class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition"
+          >
+            <i data-lucide="calendar-check" class="w-4 h-4"></i>
+            <span>Cargar Semana al Calendario</span>
+          </button>
+          <button
+            onclick="activateDistancePlanForRunner('${plan.id}', 4)"
+            class="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold text-xs flex items-center gap-1.5 transition"
+            title="Genera 4 semanas progresivas en tu calendario"
+          >
+            <i data-lucide="layers" class="w-4 h-4 text-sky-400"></i>
+            <span>Cargar Bloque de 4 Semanas</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Estructura Semanal de 7 Días del Plan Seleccionado -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2.5 pt-2">
+        ${sessions
+          .map((s) => {
+            const tCat = WORKOUT_TYPES_CATALOG[s.type] || WORKOUT_TYPES_CATALOG.easy;
+            return `
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 flex flex-col justify-between space-y-2">
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200">${s.dayName}</span>
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ${tCat.badgeClass}">${tCat.shortName}</span>
+                  </div>
+                  <div class="text-xs font-bold text-slate-900 dark:text-white leading-snug">${s.title}</div>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">${s.notes}</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+                  <span class="font-bold text-emerald-600 dark:text-emerald-400">${s.km > 0 ? s.km + ' km' : 'Recuperación'}</span>
+                  <span class="font-mono text-slate-600 dark:text-slate-300">${s.pace !== '--:--' ? s.pace + '/km' : s.min + ' min'}</span>
+                </div>
+              </div>
+            `;
+          })
+          .join('')}
+      </div>
+    </div>
+  `;
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function activateDistancePlanForRunner(planKey, weeksCount = 1) {
+  const plan = DISTANCE_TRAINING_PLANS[planKey];
+  if (!plan) return;
+
+  const level = document.getElementById('planLevelSelector')?.value || 'improver';
+  const levelNames = {
+    finisher: 'Completar con solidez',
+    improver: 'Mejorar Marca Personal',
+    competitive: 'Rendimiento Competitivo'
+  };
+  const baseMult = level === 'finisher' ? 0.8 : level === 'competitive' ? 1.22 : 1.0;
+  const paces = getRunnerPacesByVDOT(appState.profile);
+  const monday = getMondayOfWeek(0);
+
+  let createdCount = 0;
+
+  for (let w = 0; w < weeksCount; w++) {
+    // Progresión gradual (+5% por semana y semana 4 de descarga suave)
+    const weekProgression = w === 3 ? 0.88 : 1 + w * 0.05;
+    const microcycle = plan.buildMicrocycle(paces, baseMult * weekProgression);
+
+    microcycle.forEach((session) => {
+      const targetDate = new Date(monday);
+      targetDate.setDate(monday.getDate() + w * 7 + session.dayOffset);
+      const isoDate = formatDateISO(targetDate);
+
+      // Reemplazar solo entrenamientos planeados pendientes en esa fecha (preservando completados)
+      appState.workouts = appState.workouts.filter(
+        (existing) => !(existing.date === isoDate && existing.status === 'planned')
+      );
+
+      // Si ya hay un entrenamiento completado ese día en la semana 1, no duplicar
+      const alreadyCompletedThatDay = appState.workouts.some(
+        (existing) =>
+          existing.date === isoDate &&
+          (existing.status === 'completed' || existing.status === 'modified')
+      );
+      if (alreadyCompletedThatDay && w === 0) return;
+
+      appState.workouts.push({
+        id: `w-plan-${plan.id}-${Date.now()}-${w}-${session.dayOffset}`,
+        date: isoDate,
+        type: session.type,
+        status: 'planned',
+        title: weeksCount > 1 ? `[Sem ${w + 1}] ${session.title}` : session.title,
+        plannedKm: session.km,
+        plannedMin: session.min,
+        plannedPace: session.pace,
+        plannedZone: session.zone,
+        actualKm: 0,
+        actualMin: 0,
+        actualPace: '',
+        actualHR: 0,
+        actualMaxHR: 0,
+        actualCadence: 0,
+        actualElevation: 0,
+        actualCalories: 0,
+        actualRpe: 5,
+        watchAnalysis: '',
+        notes: session.notes,
+        screenshots: []
+      });
+      createdCount++;
+    });
+  }
+
+  // Guardar como Plan Activo del corredor
+  appState.activePlan = {
+    key: plan.id,
+    name: `${plan.name} (${levelNames[level]})`,
+    level,
+    levelLabel: levelNames[level],
+    distanceKm: plan.distanceKm,
+    activatedAt: getLocalISODate(0)
+  };
+
+  // Si el corredor no tiene un objetivo de esta distancia, crearlo o ponerlo al frente
+  const vdot = getRunnerVDOT(appState.profile);
+  const predictedSec = predictRaceTimeSeconds(vdot + 1.0, plan.distanceKm * 1000);
+  const existingGoal = appState.goals.find(
+    (g) => Math.abs(Number(g.distanceKm) - plan.distanceKm) < 0.5
+  );
+  if (!existingGoal) {
+    appState.goals.unshift({
+      id: `goal-plan-${Date.now()}`,
+      name: `Meta ${plan.label} — ${plan.name}`,
+      distanceKm: plan.distanceKm,
+      date: getLocalISODate(plan.durationWeeks * 7),
+      targetTime: formatSecondsToTime(predictedSec, plan.distanceKm >= 20),
+      priority: 'A',
+      notes: `Plan activo (${levelNames[level]}) cargado en el calendario.`
+    });
+  }
+
+  saveState();
+  refreshAllViews();
+  showToast(`¡${plan.name} activado! Se cargaron ${createdCount} sesiones en tu calendario.`);
+}
