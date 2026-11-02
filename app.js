@@ -2581,6 +2581,7 @@ function renderDashboard() {
   renderBanisterMonitor();
   renderTrophiesShowcase();
   updateInjuryDashboardBadge();
+  updateRaceChecklistBadge();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -3945,6 +3946,11 @@ window.addEventListener('DOMContentLoaded', () => {
   startBackgroundReminderWatcher();
   if (window.lucide) lucide.createIcons();
 
+  // Registro de Service Worker para modo offline y PWA instalable
+  if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeWorkoutModal();
@@ -3958,6 +3964,8 @@ window.addEventListener('DOMContentLoaded', () => {
       closeInjuryTrackerModal();
       closeVamModal();
       closeStoryCardModal();
+      closeNutritionMacroModal();
+      closeRaceChecklistModal();
     }
   });
 });
@@ -6815,4 +6823,321 @@ function copyStoryCardImage() {
       downloadStoryCardImage();
     }
   });
+}
+
+// ============================================================================
+// FEATURE 4: CALCULADORA DE GASTO CALÓRICO & MACRONUTRIENTES DIARIOS
+// ============================================================================
+
+function openNutritionMacroModal() {
+  const modal = document.getElementById('nutritionMacroModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Pre-cargar valores desde el perfil y el entrenamiento de hoy
+  const weightInput = document.getElementById('nmRunnerWeightInput');
+  if (weightInput && appState.profile.weight) {
+    weightInput.value = appState.profile.weight;
+  }
+
+  calculateNutritionMacros();
+}
+
+function closeNutritionMacroModal() {
+  const modal = document.getElementById('nutritionMacroModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function calculateNutritionMacros() {
+  const dayTypeSelect = document.getElementById('nmDayTypeSelect');
+  const weightInput = document.getElementById('nmRunnerWeightInput');
+  const kmInput = document.getElementById('nmKmInput');
+
+  let weightKg = parseFloat(weightInput ? weightInput.value : '68.5') || 68.5;
+  let dayType = dayTypeSelect ? dayTypeSelect.value : 'auto';
+  let runningKm = parseFloat(kmInput ? kmInput.value : '10.0') || 0;
+
+  // Si está en 'auto', buscar sesión de hoy en el calendario
+  if (dayType === 'auto') {
+    const todayISO = getLocalISODate(0);
+    const todayWorkout = appState.workouts.find((w) => w.date === todayISO);
+    if (todayWorkout) {
+      if (todayWorkout.type === 'rest') {
+        dayType = 'rest';
+        runningKm = 0;
+      } else if (todayWorkout.type === 'long') {
+        dayType = 'long';
+        runningKm = Number(todayWorkout.actualKm || todayWorkout.plannedKm) || 18;
+      } else if (todayWorkout.type === 'tempo' || todayWorkout.type === 'intervals' || todayWorkout.type === 'hills') {
+        dayType = 'quality';
+        runningKm = Number(todayWorkout.actualKm || todayWorkout.plannedKm) || 10;
+      } else if (todayWorkout.type === 'race') {
+        dayType = 'race';
+        runningKm = Number(todayWorkout.actualKm || todayWorkout.plannedKm) || 21.1;
+      } else {
+        dayType = 'easy';
+        runningKm = Number(todayWorkout.actualKm || todayWorkout.plannedKm) || 8;
+      }
+    } else {
+      dayType = 'easy';
+      runningKm = 8;
+    }
+    if (kmInput) kmInput.value = runningKm.toFixed(1);
+  }
+
+  // Tasa Metabólica Basal (BMR) + Actividad cotidiana sedentaria/ligera (NEAT ~ x1.2)
+  const age = parseFloat(appState.profile.age) || 30;
+  const height = parseFloat(appState.profile.height) || 175;
+  const bmrBase = (10 * weightKg) + (6.25 * height) - (5 * age) + 5;
+  const dailyBaseCal = Math.round(bmrBase * 1.2);
+
+  // Gasto energético por running (~ 1.0 kcal por kg de peso por km)
+  let runIntensityFactor = 1.0;
+  let targetCarbsPerKg = 5.5; // g/kg
+  let targetProteinPerKg = 1.6; // g/kg
+
+  if (dayType === 'rest') {
+    runIntensityFactor = 0;
+    targetCarbsPerKg = 3.5;
+    targetProteinPerKg = 1.4;
+  } else if (dayType === 'easy') {
+    runIntensityFactor = 0.95;
+    targetCarbsPerKg = 5.0;
+    targetProteinPerKg = 1.5;
+  } else if (dayType === 'quality') {
+    runIntensityFactor = 1.1;
+    targetCarbsPerKg = 6.5;
+    targetProteinPerKg = 1.7;
+  } else if (dayType === 'long') {
+    runIntensityFactor = 1.02;
+    targetCarbsPerKg = 8.0;
+    targetProteinPerKg = 1.7;
+  } else if (dayType === 'race') {
+    runIntensityFactor = 1.15;
+    targetCarbsPerKg = 9.0;
+    targetProteinPerKg = 1.6;
+  }
+
+  const runningCalories = Math.round(runningKm * weightKg * runIntensityFactor);
+  const totalCalories = dailyBaseCal + runningCalories;
+
+  // Gramos de macronutrientes
+  const carbsGrams = Math.round(weightKg * targetCarbsPerKg);
+  const proteinGrams = Math.round(weightKg * targetProteinPerKg);
+
+  // Calorías de Carbohidratos (4 kcal/g) y Proteínas (4 kcal/g)
+  const carbsCal = carbsGrams * 4;
+  const proteinCal = proteinGrams * 4;
+
+  // Grasas saludables (9 kcal/g) para completar el balance calórico o mínimo 0.9 g/kg
+  let fatCal = Math.max(weightKg * 0.85 * 9, totalCalories - (carbsCal + proteinCal));
+  const fatGrams = Math.round(fatCal / 9);
+
+  // Porcentajes de distribución
+  const sumCal = carbsCal + proteinCal + fatCal;
+  const carbsPct = Math.round((carbsCal / sumCal) * 100);
+  const proteinPct = Math.round((proteinCal / sumCal) * 100);
+  const fatPct = Math.max(0, 100 - (carbsPct + proteinPct));
+
+  // Actualizar DOM
+  const totCalEl = document.getElementById('nmTotalCalories');
+  const runBurnSub = document.getElementById('nmRunningBurnSub');
+  const carbsEl = document.getElementById('nmCarbsGrams');
+  const carbsPerKgEl = document.getElementById('nmCarbsPerKg');
+  const protEl = document.getElementById('nmProteinGrams');
+  const protPerKgEl = document.getElementById('nmProteinPerKg');
+  const fatEl = document.getElementById('nmFatGrams');
+  const fatPerKgEl = document.getElementById('nmFatPerKg');
+
+  if (totCalEl) totCalEl.textContent = totalCalories.toLocaleString('es-ES');
+  if (runBurnSub) {
+    runBurnSub.textContent = runningCalories > 0 ? `+${runningCalories} kcal en running (${runningKm} km)` : 'Día sin carrera (solo gasto base)';
+  }
+  if (carbsEl) carbsEl.textContent = `${carbsGrams} g`;
+  if (carbsPerKgEl) carbsPerKgEl.textContent = `${targetCarbsPerKg.toFixed(1)} g/kg (Glucógeno)`;
+  if (protEl) protEl.textContent = `${proteinGrams} g`;
+  if (protPerKgEl) protPerKgEl.textContent = `${targetProteinPerKg.toFixed(1)} g/kg (Miofibrilar)`;
+  if (fatEl) fatEl.textContent = `${fatGrams} g`;
+  if (fatPerKgEl) fatPerKgEl.textContent = `${(fatGrams / weightKg).toFixed(2)} g/kg (Hormonal)`;
+
+  // Barras porcentuales
+  const barCarbs = document.getElementById('nmBarCarbs');
+  const barProt = document.getElementById('nmBarProtein');
+  const barFat = document.getElementById('nmBarFat');
+  const lCarbs = document.getElementById('nmCarbsPctLabel');
+  const lProt = document.getElementById('nmProteinPctLabel');
+  const lFat = document.getElementById('nmFatPctLabel');
+
+  if (barCarbs) barCarbs.style.width = `${carbsPct}%`;
+  if (barProt) barProt.style.width = `${proteinPct}%`;
+  if (barFat) barFat.style.width = `${fatPct}%`;
+
+  if (lCarbs) lCarbs.textContent = `${carbsPct}%`;
+  if (lProt) lProt.textContent = `${proteinPct}%`;
+  if (lFat) lFat.textContent = `${fatPct}%`;
+}
+
+// ============================================================================
+// FEATURE 5: MOCHILA & CHECKLIST PARA EL DÍA DE CARRERA
+// ============================================================================
+
+const DEFAULT_RACE_CHECKLIST_SECTIONS = [
+  {
+    id: 'race_essentials',
+    title: '🏃 Imprescindibles de Carrera',
+    items: [
+      { id: 'item_dorsal', text: 'Dorsal oficial (con chip de cronometraje verificado en su reverso)' },
+      { id: 'item_pins', text: 'Imperdibles de seguridad (4 o 6) o cinturón porta-dorsal elástico' },
+      { id: 'item_shoes', text: 'Zapatillas de carrera comprobadas (con cordones atados en doble nudo)' },
+      { id: 'item_socks', text: 'Calcetines técnicos probados en fondos previos (sin costuras molestas)' },
+      { id: 'item_watch', text: 'Reloj GPS cargado al 100% (con satélites calibrados y alarma configurada)' }
+    ]
+  },
+  {
+    id: 'race_nutrition',
+    title: '⚡ Nutrición, Hidratación & Pre-Salida',
+    items: [
+      { id: 'item_gels', text: 'Geles energéticos calculados (ej. 3-4 geles, con y sin cafeína marcados)' },
+      { id: 'item_salts', text: 'Cápsulas de sal o sales masticables para prevenir calambres' },
+      { id: 'item_bottle', text: 'Botellín de agua desechable para beber a sorbos en el cajón de salida' },
+      { id: 'item_breakfast', text: 'Desayuno pre-carrera probado y digerido con 2.5 a 3 horas de antelación' }
+    ]
+  },
+  {
+    id: 'race_care',
+    title: '🛡️ Prevención de Rozaduras & Clima',
+    items: [
+      { id: 'item_vaseline', text: 'Vaselina pura o crema anti-rozaduras (ingles, pezones, axilas y dedos)' },
+      { id: 'item_cap', text: 'Gorra técnica / visera y gafas de sol ligeras' },
+      { id: 'item_sunscreen', text: 'Protector solar deportivo resistente al sudor (rostro, hombros y cuello)' },
+      { id: 'item_warmup_clothes', text: 'Ropa vieja de abrigo para desechar o entregar antes del pistoletazo' }
+    ]
+  },
+  {
+    id: 'race_finish',
+    title: '🏁 Guardarropa, Meta & Post-Carrera',
+    items: [
+      { id: 'item_dry_clothes', text: 'Ropa seca completa para cambiarte en meta (camiseta limpia, sudadera, pantalón)' },
+      { id: 'item_flipflops', text: 'Chanclas o calzado amplio para liberar los pies tras el esfuerzo' },
+      { id: 'item_recovery_shake', text: 'Batido recuperador de proteína + carbohidratos para reponer glucógeno' },
+      { id: 'item_id_money', text: 'Documento de identidad oficial, tarjeta médica y efectivo/tarjeta' }
+    ]
+  }
+];
+
+function openRaceChecklistModal() {
+  const modal = document.getElementById('raceChecklistModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  renderRaceChecklist();
+}
+
+function closeRaceChecklistModal() {
+  const modal = document.getElementById('raceChecklistModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function renderRaceChecklist() {
+  const container = document.getElementById('checklistSectionsContainer');
+  if (!container) return;
+
+  if (!appState.raceDayChecklist || typeof appState.raceDayChecklist !== 'object') {
+    appState.raceDayChecklist = {};
+  }
+
+  let totalItems = 0;
+  let checkedItems = 0;
+
+  container.innerHTML = DEFAULT_RACE_CHECKLIST_SECTIONS.map((sec) => {
+    return `
+      <div class="space-y-2 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+          ${sec.title}
+        </h4>
+        <div class="space-y-2 pt-1">
+          ${sec.items.map((item) => {
+            totalItems++;
+            const isChecked = !!appState.raceDayChecklist[item.id];
+            if (isChecked) checkedItems++;
+            return `
+              <label class="flex items-start gap-2.5 cursor-pointer text-xs group">
+                <input type="checkbox" id="${item.id}" ${isChecked ? 'checked' : ''} onchange="toggleChecklistItem('${item.id}', this.checked)" class="mt-0.5 w-4 h-4 rounded text-yellow-600 focus:ring-yellow-500 border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer" />
+                <span class="${isChecked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'} group-hover:text-slate-900 dark:group-hover:text-white transition">
+                  ${item.text}
+                </span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Actualizar Barra de Progreso
+  const pct = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+  const bar = document.getElementById('checklistProgressBar');
+  const txt = document.getElementById('checklistProgressText');
+
+  if (bar) bar.style.width = `${pct}%`;
+  if (txt) {
+    txt.textContent = `${checkedItems} de ${totalItems} elementos listos (${pct}%)`;
+    if (pct === 100) {
+      txt.innerHTML = `🎉 ¡Mochila 100% lista! Tienes todo para volar en carrera.`;
+    }
+  }
+
+  updateRaceChecklistBadge();
+}
+
+function toggleChecklistItem(itemId, isChecked) {
+  if (!appState.raceDayChecklist) appState.raceDayChecklist = {};
+  appState.raceDayChecklist[itemId] = isChecked;
+  saveState();
+  renderRaceChecklist();
+}
+
+function checkAllChecklistItems(checkAll = true) {
+  if (!appState.raceDayChecklist) appState.raceDayChecklist = {};
+  DEFAULT_RACE_CHECKLIST_SECTIONS.forEach((sec) => {
+    sec.items.forEach((item) => {
+      appState.raceDayChecklist[item.id] = checkAll;
+    });
+  });
+  saveState();
+  renderRaceChecklist();
+  showToast(checkAll ? '¡Mochila marcada como 100% lista!' : 'Lista de mochila desmarcada');
+}
+
+function updateRaceChecklistBadge() {
+  const badge = document.getElementById('raceChecklistPillBadge');
+  if (!badge) return;
+
+  if (!appState.raceDayChecklist) appState.raceDayChecklist = {};
+  let total = 0;
+  let done = 0;
+  DEFAULT_RACE_CHECKLIST_SECTIONS.forEach((sec) => {
+    sec.items.forEach((item) => {
+      total++;
+      if (appState.raceDayChecklist[item.id]) done++;
+    });
+  });
+
+  if (done === total && total > 0) {
+    badge.textContent = '100% Lista';
+    badge.className = 'text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300';
+  } else if (done > 0) {
+    badge.textContent = `${done}/${total}`;
+    badge.className = 'text-[10px] font-bold px-1.5 py-0.2 rounded bg-yellow-100 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-300';
+  } else {
+    badge.textContent = 'Pendiente';
+    badge.className = 'text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
+  }
 }

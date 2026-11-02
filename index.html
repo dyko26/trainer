@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <meta name="theme-color" content="#059669" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RunPulse AI" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23059669'/><path d='M18 54h16l10-26 14 46 10-20h14' stroke='white' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
   <title>RunPulse AI — Seguimiento de Running, Recomendaciones & Entrenador Personal</title>
   <link rel="manifest" href="manifest.json" />
   <!-- Tailwind CSS CDN -->
@@ -386,6 +391,41 @@
               </div>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-orange-600 transition"></i>
+          </button>
+        </div>
+
+        <!-- Fila 3: Nutrición & Macros y Mochila de Carrera -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onclick="openNutritionMacroModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-lime-50 dark:bg-lime-500/10 text-lime-600 dark:text-lime-400 flex items-center justify-center shrink-0">
+                <i data-lucide="utensils" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Nutrición & Macros Diarios</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-lime-100 dark:bg-lime-500/20 text-lime-700 dark:text-lime-300">4</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Gasto calórico, carbohidratos y proteínas según la sesión</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-lime-600 transition"></i>
+          </button>
+
+          <button onclick="openRaceChecklistModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 flex items-center justify-center shrink-0">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Mochila & Checklist de Carrera</span>
+                  <span id="raceChecklistPillBadge" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-yellow-100 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-300">5</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Lista interactiva de material imprescindible para el día de carrera</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-yellow-600 transition"></i>
           </button>
         </div>
       </div>
@@ -2382,6 +2422,166 @@
             <span>Descargar PNG</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 11: CALCULADORA DE GASTO CALÓRICO & MACROS DEL DÍA ==================== -->
+  <div id="nutritionMacroModal" onclick="if(event.target === this) closeNutritionMacroModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-2xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-lime-50 dark:bg-lime-500/10 text-lime-600 dark:text-lime-400 flex items-center justify-center">
+            <i data-lucide="utensils" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Gasto Calórico & Macronutrientes Diarios</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Nutrición de precisión según la sesión de running programada para hoy</p>
+          </div>
+        </div>
+        <button onclick="closeNutritionMacroModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Configuración del Tipo de Día -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/70 dark:bg-slate-950/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800/80">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tipo de Sesión de Hoy</label>
+          <select id="nmDayTypeSelect" onchange="calculateNutritionMacros()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="auto" selected>Detectar de mi Calendario</option>
+            <option value="rest">Día de Descanso / Recuperación</option>
+            <option value="easy">Rodaje Suave Z1-Z2 (6-10 km)</option>
+            <option value="quality">Calidad: Series / Tempo (8-14 km)</option>
+            <option value="long">Tirada Larga / Fondo (16-30 km)</option>
+            <option value="race">Día de Competición / Carrera</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Peso del Atleta (kg)</label>
+          <input type="number" id="nmRunnerWeightInput" step="0.5" value="68.5" oninput="calculateNutritionMacros()" class="w-full rp-input px-3 py-2 text-xs font-mono" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Km de Running Hoy</label>
+          <input type="number" id="nmKmInput" step="0.5" value="10.0" oninput="calculateNutritionMacros()" class="w-full rp-input px-3 py-2 text-xs font-mono" />
+        </div>
+      </div>
+
+      <!-- 4 KPIs de Calorías y Macronutrientes -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Calorías Totales</span>
+          <div id="nmTotalCalories" class="text-xl sm:text-2xl font-bold font-mono text-slate-900 dark:text-white mt-1">2,650</div>
+          <span id="nmRunningBurnSub" class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">+685 kcal en running</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/20 dark:bg-amber-950/10">
+          <span class="text-[11px] font-semibold text-amber-700 dark:text-amber-300 block">Carbohidratos</span>
+          <div id="nmCarbsGrams" class="text-xl sm:text-2xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-1">410 g</div>
+          <span id="nmCarbsPerKg" class="text-[10px] text-amber-600/80 dark:text-amber-400/80 block">6.0 g/kg (Glucógeno)</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-rose-200/70 dark:border-rose-900/40 bg-rose-50/20 dark:bg-rose-950/10">
+          <span class="text-[11px] font-semibold text-rose-700 dark:text-rose-300 block">Proteínas</span>
+          <div id="nmProteinGrams" class="text-xl sm:text-2xl font-bold font-mono text-rose-600 dark:text-rose-400 mt-1">110 g</div>
+          <span id="nmProteinPerKg" class="text-[10px] text-rose-600/80 dark:text-rose-400/80 block">1.6 g/kg (Miofibrilar)</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-sky-200/70 dark:border-sky-900/40 bg-sky-50/20 dark:bg-sky-950/10">
+          <span class="text-[11px] font-semibold text-sky-700 dark:text-sky-300 block">Grasas Saludables</span>
+          <div id="nmFatGrams" class="text-xl sm:text-2xl font-bold font-mono text-sky-600 dark:text-sky-400 mt-1">65 g</div>
+          <span id="nmFatPerKg" class="text-[10px] text-sky-600/80 dark:text-sky-400/80 block">0.95 g/kg (Hormonal)</span>
+        </div>
+      </div>
+
+      <!-- Barra Visual de Distribución de Macronutrientes -->
+      <div class="space-y-1.5">
+        <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
+          <span class="text-amber-600 dark:text-amber-400">Carbohidratos: <strong id="nmCarbsPctLabel">62%</strong></span>
+          <span class="text-rose-600 dark:text-rose-400">Proteína: <strong id="nmProteinPctLabel">17%</strong></span>
+          <span class="text-sky-600 dark:text-sky-400">Grasas: <strong id="nmFatPctLabel">21%</strong></span>
+        </div>
+        <div class="w-full h-3 rounded-full overflow-hidden flex bg-slate-200 dark:bg-slate-800">
+          <div id="nmBarCarbs" class="bg-amber-500 h-full transition-all" style="width: 62%;"></div>
+          <div id="nmBarProtein" class="bg-rose-500 h-full transition-all" style="width: 17%;"></div>
+          <div id="nmBarFat" class="bg-sky-500 h-full transition-all" style="width: 21%;"></div>
+        </div>
+      </div>
+
+      <!-- Recomendaciones Prácticas de Ingesta y Timing -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+        <div class="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/50">
+          <strong class="text-slate-900 dark:text-white block font-semibold mb-1">Pre-Entreno (-2h a -3h)</strong>
+          <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+            Avena cocida con plátano, tostadas de pan blanco con miel o mermelada. Bajo en fibra y grasas para digestión rápida.
+          </p>
+        </div>
+        <div class="p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/20">
+          <strong class="text-emerald-700 dark:text-emerald-300 block font-semibold mb-1">Ventana Post-Carrera (+45m)</strong>
+          <p class="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+            Ratio 3:1 o 4:1 de carbohidratos/proteína: Yogur con plátano y miel, batido de proteínas con avena o leche con cacao.
+          </p>
+        </div>
+        <div class="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/50">
+          <strong class="text-slate-900 dark:text-white block font-semibold mb-1">Cena de Recarga</strong>
+          <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+            Arroz, boniato o pasta con pechuga de pollo, pescado o legumbres. Añade aguacate o aceite de oliva virgen extra.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="closeNutritionMacroModal()" class="px-5 py-2 rounded-xl bg-lime-600 hover:bg-lime-700 text-white font-semibold text-xs shadow-sm">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 12: MOCHILA & CHECKLIST PARA EL DÍA DE CARRERA ==================== -->
+  <div id="raceChecklistModal" onclick="if(event.target === this) closeRaceChecklistModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-2xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 flex items-center justify-center">
+            <i data-lucide="check-square" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Mochila & Checklist del Día de Carrera</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Lista interactiva para preparar tu equipo la noche antes de la competición</p>
+          </div>
+        </div>
+        <button onclick="closeRaceChecklistModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Barra de Progreso de Preparación -->
+      <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-semibold text-slate-700 dark:text-slate-300">Estado de la Mochila:</span>
+          <span id="checklistProgressText" class="font-bold text-yellow-600 dark:text-yellow-400">0 de 16 elementos listos (0%)</span>
+        </div>
+        <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+          <div id="checklistProgressBar" class="bg-yellow-500 h-2 rounded-full transition-all duration-300" style="width: 0%;"></div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-1 text-[11px]">
+          <button type="button" onclick="checkAllChecklistItems(true)" class="text-yellow-600 dark:text-yellow-400 hover:underline font-semibold">Marcar Todo</button>
+          <span class="text-slate-300 dark:text-slate-700">•</span>
+          <button type="button" onclick="checkAllChecklistItems(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Desmarcar Todo</button>
+        </div>
+      </div>
+
+      <!-- Secciones del Checklist -->
+      <div class="space-y-4 max-h-[50vh] overflow-y-auto pr-1" id="checklistSectionsContainer">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+        <span class="text-[11px] text-slate-400 italic">Los elementos marcados se guardan automáticamente.</span>
+        <button type="button" onclick="closeRaceChecklistModal()" class="px-5 py-2 rounded-xl bg-yellow-600 hover:bg-yellow-700 text-white font-semibold text-xs shadow-sm">
+          Listo
+        </button>
       </div>
     </div>
   </div>
