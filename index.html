@@ -254,6 +254,57 @@
         <!-- Populated dynamically by JS -->
       </div>
 
+      <!-- ==================== ACCESOS RÁPIDOS: GELES/HIDRATACIÓN, CRONÓMETRO DE RUTINAS Y TROFEOS ==================== -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button onclick="openHydrationModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+              <i data-lucide="droplets" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span>Plan de Geles & Agua</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300">3</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Estrategia por km y clima</p>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition"></i>
+        </button>
+
+        <button onclick="openRoutineTimerModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <i data-lucide="timer" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span>Rutinas con Cronómetro</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">5</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Activación, Sóleos y Movilidad</p>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition"></i>
+        </button>
+
+        <button onclick="openTrophiesModal()" class="rp-card rp-card-interactive p-4 text-left flex items-center justify-between gap-3 group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <i data-lucide="award" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span>Vitrina de Trofeos</span>
+                <span id="unlockedTrophiesPill" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300">4</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Medallas y rachas ganadas</p>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-amber-600 transition"></i>
+        </button>
+      </div>
+
       <!-- ==================== NUEVO: RECOMENDACIÓN DIARIA SEGÚN PROGRESO REGISTRADO ==================== -->
       <div class="rp-card p-5 sm:p-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -379,6 +430,32 @@
           <div class="h-60">
             <canvas id="paceHrTrendChart"></canvas>
           </div>
+        </div>
+      </div>
+
+      <!-- ==================== VITRINA DE TROFEOS Y LOGROS (RESUMEN MOTIVADOR) ==================== -->
+      <div class="rp-card p-5 sm:p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <i data-lucide="trophy" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">Vitrina de Trofeos & Medallas Desbloqueadas</h3>
+                <span id="unlockedTrophiesBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                  Calculando...
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Recompensas automáticas por tu constancia, marcas y disciplina.</p>
+            </div>
+          </div>
+          <button onclick="openTrophiesModal()" class="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 self-start sm:self-auto">
+            Ver vitrina completa y retos <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="dashboardTrophiesShowcase" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <!-- Populated by JS -->
         </div>
       </div>
     </section>
@@ -641,6 +718,10 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="openHydrationModal()" class="px-3 py-2 rounded-xl bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-500/20 text-xs font-semibold flex items-center gap-1.5 transition">
+              <i data-lucide="droplets" class="w-3.5 h-3.5"></i>
+              <span>Plan de Geles & Agua</span>
+            </button>
             <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Enfoque del plan:</label>
             <select id="planLevelSelector" onchange="renderDistancePlanShowcase()" class="rp-input px-3 py-2 text-xs font-semibold">
               <option value="finisher">Completar con solidez (3-4 días/sem)</option>
@@ -1409,6 +1490,279 @@
           <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs">Guardar Objetivo</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: PLANIFICADOR DE HIDRATACIÓN & GELES ==================== -->
+  <div id="hydrationModal" onclick="if(event.target === this) closeHydrationModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-3xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+            <i data-lucide="droplets" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Plan de Hidratación & Geles para Carrera / Fondos</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Estrategia fisiológica de carbohidratos, líquidos y sodio km a km</p>
+          </div>
+        </div>
+        <button onclick="closeHydrationModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Configuración del Cálculo -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50/70 dark:bg-slate-950/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800/80">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Distancia del Reto</label>
+          <select id="hydDistance" onchange="calculateHydrationPlan()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="10">10K (10.0 km)</option>
+            <option value="15">15K Fondo (15.0 km)</option>
+            <option value="21.0975" selected>Media Maratón (21.1 km)</option>
+            <option value="30">Tirada Larga 30K</option>
+            <option value="42.195">Maratón Completa (42.2 km)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Ritmo Previsto (min/km)</label>
+          <input type="text" id="hydPace" value="05:15" onchange="calculateHydrationPlan()" placeholder="05:15" class="w-full rp-input px-3 py-2 text-xs font-mono" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Clima / Temperatura</label>
+          <select id="hydWeather" onchange="calculateHydrationPlan()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="cool">Fresco (&lt; 15°C)</option>
+            <option value="moderate" selected>Templado (15°C - 22°C)</option>
+            <option value="hot">Calor / Humedad (&gt; 22°C)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Geles por Unidad</label>
+          <select id="hydGelType" onchange="calculateHydrationPlan()" class="w-full rp-input px-3 py-2 text-xs">
+            <option value="22" selected>Estándar (22g CHO)</option>
+            <option value="30">Alta Carga (30g CHO)</option>
+            <option value="40">Super Hydro (40g CHO)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Métricas Resumen -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Tiempo Estimado</span>
+          <div id="hydTotalTime" class="text-lg sm:text-xl font-bold font-mono text-slate-900 dark:text-white mt-1">01:50:45</div>
+          <span class="text-[10px] text-slate-400">Duración de carrera</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-sky-200 dark:border-sky-900/40 bg-sky-50/30 dark:bg-sky-950/20">
+          <span class="text-[11px] font-semibold text-sky-700 dark:text-sky-300 block">Agua Recomendada</span>
+          <div id="hydTotalWater" class="text-lg sm:text-xl font-bold font-mono text-sky-600 dark:text-sky-400 mt-1">920 ml</div>
+          <span id="hydHourlyWater" class="text-[10px] text-sky-600/80 dark:text-sky-400/80 block">~500 ml/hora</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/20">
+          <span class="text-[11px] font-semibold text-amber-700 dark:text-amber-300 block">Geles Energéticos</span>
+          <div id="hydTotalGels" class="text-lg sm:text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-1">3 Geles</div>
+          <span id="hydHourlyCarbs" class="text-[10px] text-amber-600/80 dark:text-amber-400/80 block">~36 g Carbohidratos/h</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/20">
+          <span class="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 block">Sodio & Sales</span>
+          <div id="hydTotalSodium" class="text-lg sm:text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400 mt-1">650 mg</div>
+          <span class="text-[10px] text-indigo-600/80 dark:text-indigo-400/80 block">Prevención de calambres</span>
+        </div>
+      </div>
+
+      <!-- Cronograma Paso a Paso por Kilómetro -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+            <i data-lucide="clock" class="w-4 h-4 text-slate-500"></i>
+            <span>Cronograma Estratégico Paso a Paso</span>
+          </h4>
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">Basado en tolerancia gástrica media</span>
+        </div>
+
+        <div id="hydTimelineList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="copyHydrationPlanToClipboard()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center gap-1.5 transition">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copiar Plan</span>
+        </button>
+        <button type="button" onclick="closeHydrationModal()" class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-sm">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 4: VITRINA DE TROFEOS & LOGROS COMPLETA ==================== -->
+  <div id="trophiesModal" onclick="if(event.target === this) closeTrophiesModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-3xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <i data-lucide="trophy" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Vitrina de Trofeos, Rachas & Retos</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Recompensas automáticas calculadas de tus entrenamientos registrados</p>
+          </div>
+        </div>
+        <button onclick="closeTrophiesModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Resumen de Desbloqueo del Usuario -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/70 dark:bg-slate-950/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800/80">
+        <div>
+          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Trofeos Logrados</span>
+          <div id="trophiesUnlockedCount" class="text-lg sm:text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">0 de 9</div>
+          <span class="text-[10px] text-slate-400">Logros activos</span>
+        </div>
+        <div>
+          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Km Totales Registrados</span>
+          <div id="trophiesTotalKm" class="text-lg sm:text-xl font-bold font-mono text-slate-900 dark:text-white mt-1">0.0 km</div>
+          <span class="text-[10px] text-slate-400">Acumulado total</span>
+        </div>
+        <div>
+          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Racha Semanal</span>
+          <div id="trophiesStreakWeeks" class="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">1 semana</div>
+          <span class="text-[10px] text-slate-400">Constancia activa</span>
+        </div>
+        <div>
+          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Nivel de Corredor</span>
+          <div id="trophiesRunnerLevel" class="text-lg sm:text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">Iniciado</div>
+          <span class="text-[10px] text-slate-400">Rango de experiencia</span>
+        </div>
+      </div>
+
+      <!-- Lista Completa de Trofeos -->
+      <div id="trophiesFullGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[50vh] overflow-y-auto pr-1">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="flex items-center justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="closeTrophiesModal()" class="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-sm">
+          Cerrar Vitrina
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: CRONÓMETRO DE RUTINAS GUIADAS ==================== -->
+  <div id="routineTimerModal" onclick="if(event.target === this) closeRoutineTimerModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="rp-card max-w-2xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <i data-lucide="timer" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">Rutinas Guiadas con Temporizador</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Calentamiento dinámico, sóleo/tendón y movilidad con avisos acústicos</p>
+          </div>
+        </div>
+        <button onclick="closeRoutineTimerModal()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Selector de Rutinas -->
+      <div class="flex flex-wrap gap-2">
+        <button type="button" id="routineBtn-warmup" onclick="selectGuidedRoutine('warmup')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow-sm transition">
+          Activación Pre-Carrera (5 min)
+        </button>
+        <button type="button" id="routineBtn-soleus" onclick="selectGuidedRoutine('soleus')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          Fuerza Sóleos & Tendón (8 min)
+        </button>
+        <button type="button" id="routineBtn-cooldown" onclick="selectGuidedRoutine('cooldown')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          Movilidad & Calma (6 min)
+        </button>
+      </div>
+
+      <!-- Panel Central del Temporizador -->
+      <div class="p-5 sm:p-6 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 text-center space-y-4">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <span id="routineCurrentStepLabel">Paso 1 de 5</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" id="routineSoundToggleBtn" onclick="toggleRoutineSound()" class="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1">
+              <i data-lucide="volume-2" id="routineSoundIcon" class="w-3.5 h-3.5 text-emerald-600"></i>
+              <span id="routineSoundStatusText">Sonido ON</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <h4 id="routineExerciseName" class="text-xl sm:text-2xl font-display font-bold text-slate-900 dark:text-white">
+            Balanceos de Pierna Frontal / Lateral
+          </h4>
+          <p id="routineExerciseTip" class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+            Activa flexores de cadera y despierta el glúteo medio sin forzar el rango articular.
+          </p>
+        </div>
+
+        <!-- Reloj Gigante con Animación -->
+        <div class="py-2">
+          <div id="routineTimerDisplay" class="font-mono font-black text-5xl sm:text-6xl text-emerald-600 dark:text-emerald-400 tracking-tight">
+            00:45
+          </div>
+          <!-- Barra de progreso del ejercicio actual -->
+          <div class="w-full max-w-xs mx-auto bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
+            <div id="routineExerciseProgressBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Siguiente ejercicio en cola -->
+        <div class="text-xs text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-900/60 py-1.5 px-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 inline-flex items-center gap-1.5">
+          <span class="text-slate-400">Siguiente:</span>
+          <span id="routineNextExerciseName" class="font-semibold text-slate-700 dark:text-slate-300">Skips Bajos con Tobillo Reactivo</span>
+        </div>
+
+        <!-- Controles de Reproducción -->
+        <div class="flex items-center justify-center gap-3 pt-2">
+          <button type="button" onclick="prevRoutineExercise()" title="Ejercicio anterior" class="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+            <i data-lucide="skip-back" class="w-4 h-4"></i>
+          </button>
+
+          <button type="button" id="routinePlayPauseBtn" onclick="toggleRoutinePlayPause()" class="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center gap-2 transition">
+            <i data-lucide="play" id="routinePlayPauseIcon" class="w-4 h-4 fill-white"></i>
+            <span id="routinePlayPauseLabel">Iniciar Rutina</span>
+          </button>
+
+          <button type="button" onclick="nextRoutineExercise()" title="Siguiente ejercicio" class="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+            <i data-lucide="skip-forward" class="w-4 h-4"></i>
+          </button>
+
+          <button type="button" onclick="resetRoutineTimer()" title="Reiniciar ejercicio" class="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Progreso Global de la Rutina -->
+      <div>
+        <div class="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+          <span>Progreso de la sesión</span>
+          <span id="routineTotalProgressPct">0%</span>
+        </div>
+        <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div id="routineTotalProgressBar" class="bg-indigo-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end pt-2 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="closeRoutineTimerModal()" class="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+          Cerrar
+        </button>
+      </div>
     </div>
   </div>
 

@@ -2577,6 +2577,7 @@ function renderDashboard() {
   }
 
   renderDashboardCharts();
+  renderTrophiesShowcase();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -3930,6 +3931,17 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshAllViews();
   startBackgroundReminderWatcher();
   if (window.lucide) lucide.createIcons();
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeWorkoutModal();
+      closeGoalModal();
+      closeImageLightbox();
+      closeHydrationModal();
+      closeTrophiesModal();
+      closeRoutineTimerModal();
+    }
+  });
 });
 
 // ============================================================================
@@ -4426,4 +4438,935 @@ function activateDistancePlanForRunner(planKey, weeksCount = 1) {
   saveState();
   refreshAllViews();
   showToast(`¡${plan.name} activado! Se cargaron ${createdCount} sesiones en tu calendario.`);
+}
+
+// ============================================================================
+// FEATURE 3: PLANIFICADOR DE HIDRATACIÓN & GELES PARA CARRERAS Y FONDOS
+// ============================================================================
+
+function openHydrationModal() {
+  const modal = document.getElementById('hydrationModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Pre-cargar valores desde el objetivo activo o perfil si están disponibles
+  const sortedGoals = [...appState.goals].sort((a, b) => a.date.localeCompare(b.date));
+  const primaryGoal = sortedGoals[0];
+  if (primaryGoal) {
+    const distSelect = document.getElementById('hydDistance');
+    if (distSelect) {
+      if (primaryGoal.distanceKm >= 40) distSelect.value = '42.195';
+      else if (primaryGoal.distanceKm >= 28) distSelect.value = '30';
+      else if (primaryGoal.distanceKm >= 20) distSelect.value = '21.0975';
+      else if (primaryGoal.distanceKm >= 14) distSelect.value = '15';
+      else if (primaryGoal.distanceKm >= 9) distSelect.value = '10';
+    }
+
+    const targetSec = parseTimeToSeconds(primaryGoal.targetTime);
+    if (targetSec > 0 && primaryGoal.distanceKm > 0) {
+      const paceSec = targetSec / primaryGoal.distanceKm;
+      const paceStr = formatSecondsToTime(paceSec);
+      const paceInput = document.getElementById('hydPace');
+      if (paceInput) paceInput.value = paceStr;
+    }
+  }
+
+  calculateHydrationPlan();
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeHydrationModal() {
+  const modal = document.getElementById('hydrationModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function calculateHydrationPlan() {
+  const distSelect = document.getElementById('hydDistance');
+  const paceInput = document.getElementById('hydPace');
+  const weatherSelect = document.getElementById('hydWeather');
+  const gelSelect = document.getElementById('hydGelType');
+
+  if (!distSelect || !paceInput) return;
+
+  const distanceKm = parseFloat(distSelect.value) || 21.0975;
+  const paceParts = paceInput.value.split(':');
+  let paceMin = 5.25;
+  if (paceParts.length === 2) {
+    const m = parseInt(paceParts[0], 10) || 5;
+    const s = parseInt(paceParts[1], 10) || 0;
+    paceMin = m + s / 60;
+  }
+  if (paceMin <= 2.5 || paceMin >= 15) paceMin = 5.25;
+
+  const totalMinutes = distanceKm * paceMin;
+  const totalHours = totalMinutes / 60;
+  const weather = weatherSelect ? weatherSelect.value : 'moderate';
+  const carbsPerGel = parseInt(gelSelect ? gelSelect.value : '22', 10) || 22;
+
+  // Peso del corredor desde el perfil
+  const runnerWeight = parseFloat(appState.profile.weightKg) || 68;
+  const weightFactor = Math.min(1.25, Math.max(0.85, runnerWeight / 70));
+
+  // Tasa de sudoración / reposición estimada (ml/hora)
+  let baseMlPerHour = 550;
+  let sodiumPerHour = 500; // mg
+  if (weather === 'cool') {
+    baseMlPerHour = 450;
+    sodiumPerHour = 380;
+  } else if (weather === 'hot') {
+    baseMlPerHour = 750;
+    sodiumPerHour = 700;
+  }
+  const adjustedMlPerHour = Math.round(baseMlPerHour * weightFactor);
+  const totalWaterMl = Math.round(adjustedMlPerHour * totalHours);
+
+  // Carbohidratos por hora según duración
+  let carbsTargetPerHour = 40;
+  if (totalMinutes < 45) {
+    carbsTargetPerHour = 0;
+  } else if (totalMinutes < 75) {
+    carbsTargetPerHour = 25;
+  } else if (totalMinutes < 120) {
+    carbsTargetPerHour = 45;
+  } else {
+    carbsTargetPerHour = 60;
+  }
+
+  const totalCarbsGrams = Math.round(carbsTargetPerHour * totalHours);
+  const totalGels = carbsTargetPerHour > 0 ? Math.max(1, Math.round(totalCarbsGrams / carbsPerGel)) : 0;
+  const totalSodiumMg = Math.round(sodiumPerHour * totalHours);
+
+  // Formatear tiempo total HH:MM:SS
+  const totalSec = Math.round(totalMinutes * 60);
+  const hours = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  const timeFormatted = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+  // Actualizar DOM
+  const timeEl = document.getElementById('hydTotalTime');
+  const waterEl = document.getElementById('hydTotalWater');
+  const hourlyWaterEl = document.getElementById('hydHourlyWater');
+  const gelsEl = document.getElementById('hydTotalGels');
+  const hourlyCarbsEl = document.getElementById('hydHourlyCarbs');
+  const sodiumEl = document.getElementById('hydTotalSodium');
+
+  if (timeEl) timeEl.textContent = timeFormatted;
+  if (waterEl) waterEl.textContent = `${totalWaterMl} ml`;
+  if (hourlyWaterEl) hourlyWaterEl.textContent = `~${adjustedMlPerHour} ml/hora`;
+  if (gelsEl) gelsEl.textContent = `${totalGels} ${totalGels === 1 ? 'Gel' : 'Geles'}`;
+  if (hourlyCarbsEl) hourlyCarbsEl.textContent = carbsTargetPerHour > 0 ? `~${carbsTargetPerHour} g Carbohidratos/h` : 'No requiere geles';
+  if (sodiumEl) sodiumEl.textContent = `${totalSodiumMg} mg`;
+
+  // Renderizar Timeline por Kilómetro
+  renderHydrationTimeline(distanceKm, paceMin, totalGels, totalWaterMl, adjustedMlPerHour);
+}
+
+function renderHydrationTimeline(distanceKm, paceMin, totalGels, totalWaterMl, mlPerHour) {
+  const container = document.getElementById('hydTimelineList');
+  if (!container) return;
+
+  const steps = [];
+
+  // Paso Pre-carrera
+  steps.push({
+    kmText: 'Pre-Carrera (-45 min)',
+    badge: 'Hidratación previa',
+    color: 'sky',
+    icon: 'droplet',
+    action: 'Beber 300 - 400 ml de agua o bebida isotónica a pequeños sorbos. Evitar exceso para no correr con pesadez.'
+  });
+
+  if (totalGels > 0 && distanceKm >= 15) {
+    steps.push({
+      kmText: 'Pre-Salida (-15 min)',
+      badge: 'Carga inicial',
+      color: 'amber',
+      icon: 'zap',
+      action: 'Tomar 1er Gel con 150 ml de agua para asegurar glucógeno circulante desde el primer kilómetro.'
+    });
+  }
+
+  // Intervalo de geles en km
+  let gelKmInterval = distanceKm / (totalGels + 1);
+  if (gelKmInterval < 4) gelKmInterval = 4.5;
+
+  let nextGelKm = gelKmInterval;
+  let gelsAssigned = 0;
+
+  // Puestos cada 4 o 5 km
+  const waterIntervalKm = distanceKm > 15 ? 5 : (distanceKm > 8 ? 3.5 : 5);
+  let currentKm = waterIntervalKm;
+
+  while (currentKm < distanceKm - 1) {
+    const isGelStep = (gelsAssigned < totalGels) && (currentKm >= nextGelKm || currentKm + 2 >= distanceKm);
+    const estMin = Math.round(currentKm * paceMin);
+    const hrs = Math.floor(estMin / 60);
+    const ms = estMin % 60;
+    const timeStr = `${hrs > 0 ? hrs + 'h ' : ''}${ms}m`;
+
+    if (isGelStep) {
+      gelsAssigned++;
+      nextGelKm += gelKmInterval;
+      steps.push({
+        kmText: `Km ${currentKm.toFixed(1)} (~${timeStr})`,
+        badge: `Gel #${gelsAssigned}`,
+        color: 'amber',
+        icon: 'zap',
+        action: `Tomar Gel #${gelsAssigned} acompañado de 150-200 ml de agua (evitar tomarlo solo para acelerar absorción gástrica).`
+      });
+    } else {
+      steps.push({
+        kmText: `Km ${currentKm.toFixed(1)} (~${timeStr})`,
+        badge: 'Puesto de Agua',
+        color: 'sky',
+        icon: 'droplets',
+        action: 'Beber 120-150 ml de agua o electrolitos a pequeños sorbos. Mantener boca húmeda y temperatura controlada.'
+      });
+    }
+
+    currentKm += waterIntervalKm;
+  }
+
+  // Paso Meta / Post-Carrera
+  steps.push({
+    kmText: 'Meta / Llegada (+20 min)',
+    badge: 'Recuperación',
+    color: 'emerald',
+    icon: 'check-circle-2',
+    action: '500 ml de líquido con sales minerales + 25-30g de carbohidratos simples y 15g de proteína para regenerar fibras.'
+  });
+
+  container.innerHTML = steps.map((s) => `
+    <div class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/40 text-xs">
+      <div class="p-1.5 rounded-lg bg-${s.color}-50 dark:bg-${s.color}-500/10 text-${s.color}-600 dark:text-${s.color}-400 shrink-0 mt-0.5">
+        <i data-lucide="${s.icon}" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between gap-2 mb-0.5">
+          <strong class="text-slate-900 dark:text-white font-semibold">${s.kmText}</strong>
+          <span class="text-[10px] font-bold px-2 py-0.2 rounded-full bg-${s.color}-100 dark:bg-${s.color}-500/20 text-${s.color}-800 dark:text-${s.color}-300">${s.badge}</span>
+        </div>
+        <p class="text-slate-600 dark:text-slate-300">${s.action}</p>
+      </div>
+    </div>
+  `).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function copyHydrationPlanToClipboard() {
+  const distSelect = document.getElementById('hydDistance');
+  const timeEl = document.getElementById('hydTotalTime');
+  const waterEl = document.getElementById('hydTotalWater');
+  const gelsEl = document.getElementById('hydTotalGels');
+  const sodiumEl = document.getElementById('hydTotalSodium');
+
+  const text = `⚡ Plan de Hidratación & Geles — RunPulse AI\n` +
+    `• Distancia: ${distSelect ? distSelect.options[distSelect.selectedIndex].text : 'Carrera'}\n` +
+    `• Tiempo Estimado: ${timeEl ? timeEl.textContent : ''}\n` +
+    `• Agua Total: ${waterEl ? waterEl.textContent : ''}\n` +
+    `• Geles Previstos: ${gelsEl ? gelsEl.textContent : ''}\n` +
+    `• Sodio Recomendado: ${sodiumEl ? sodiumEl.textContent : ''}\n` +
+    `Generado con RunPulse AI para ${appState.profile.name || 'Corredor'}.`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('¡Plan de hidratación copiado al portapapeles!');
+  }).catch(() => {
+    showToast('Plan listo para visualizar.');
+  });
+}
+
+// ============================================================================
+// FEATURE 4: VITRINA DE TROFEOS, RACHAS Y LOGROS (GAMIFICACIÓN)
+// ============================================================================
+
+const TROPHIES_CATALOG = [
+  {
+    id: 'first_run',
+    title: 'Primer Paso Triunfal',
+    icon: 'footprints',
+    badge: 'Iniciación',
+    color: 'emerald',
+    description: 'Registra tu primer entrenamiento completado en la bitácora.',
+    evaluate: (stats) => ({
+      unlocked: stats.completedCount >= 1,
+      progress: Math.min(100, (stats.completedCount / 1) * 100),
+      current: `${stats.completedCount} / 1 sesión`
+    })
+  },
+  {
+    id: 'weekly_streak',
+    title: 'Guerrero de la Constancia',
+    icon: 'flame',
+    badge: 'Constancia',
+    color: 'amber',
+    description: 'Completa al menos 3 entrenamientos en la semana activa.',
+    evaluate: (stats) => ({
+      unlocked: stats.currentWeekCompleted >= 3,
+      progress: Math.min(100, Math.round((stats.currentWeekCompleted / 3) * 100)),
+      current: `${stats.currentWeekCompleted} / 3 sesiones`
+    })
+  },
+  {
+    id: 'speed_demon',
+    title: 'Rompe-Barreras (Sub 5:00)',
+    icon: 'zap',
+    badge: 'Velocidad',
+    color: 'rose',
+    description: 'Registra un rodaje o serie a ritmo promedio menor de 5:00 min/km (mínimo 3 km).',
+    evaluate: (stats) => ({
+      unlocked: stats.hasFastPaceSub5,
+      progress: stats.hasFastPaceSub5 ? 100 : Math.min(95, Math.round((5 / (stats.bestPaceDec || 6)) * 100)),
+      current: stats.bestPaceDec ? `${decimalMinutesToPaceString(stats.bestPaceDec)} /km` : 'Sin registro'
+    })
+  },
+  {
+    id: 'long_run_hero',
+    title: 'Rey de la Tirada Larga',
+    icon: 'mountain',
+    badge: 'Resistencia',
+    color: 'sky',
+    description: 'Completa un fondo o tirada larga de 16 km o más en una sesión.',
+    evaluate: (stats) => ({
+      unlocked: stats.maxDistanceKm >= 16,
+      progress: Math.min(100, Math.round((stats.maxDistanceKm / 16) * 100)),
+      current: `${stats.maxDistanceKm.toFixed(1)} / 16.0 km`
+    })
+  },
+  {
+    id: 'rule_8020',
+    title: 'Maestro del 80/20',
+    icon: 'scale',
+    badge: 'Fisiología',
+    color: 'indigo',
+    description: 'Mantén al menos 75% de tu volumen en sesiones de baja intensidad (Rodaje/Fondo Z1-Z2).',
+    evaluate: (stats) => ({
+      unlocked: stats.aerobicPct >= 75 && stats.completedCount >= 4,
+      progress: Math.min(100, stats.aerobicPct),
+      current: `${stats.aerobicPct}% aeróbico suave (mín. 4 sesiones)`
+    })
+  },
+  {
+    id: 'century_club',
+    title: 'Club de los 100 Km',
+    icon: 'medal',
+    badge: 'Volumen',
+    color: 'purple',
+    description: 'Acumula más de 100 km completados en tu bitácora de entrenamientos.',
+    evaluate: (stats) => ({
+      unlocked: stats.totalKm >= 100,
+      progress: Math.min(100, Math.round((stats.totalKm / 100) * 100)),
+      current: `${stats.totalKm.toFixed(1)} / 100 km`
+    })
+  },
+  {
+    id: 'cadence_elite',
+    title: 'Cadencia Olímpica',
+    icon: 'activity',
+    badge: 'Técnica',
+    color: 'emerald',
+    description: 'Registra una cadencia media superior o igual a 175 spm.',
+    evaluate: (stats) => ({
+      unlocked: stats.maxCadence >= 175,
+      progress: Math.min(100, Math.round((stats.maxCadence / 175) * 100)),
+      current: `${stats.maxCadence > 0 ? stats.maxCadence : '--'} / 175 spm`
+    })
+  },
+  {
+    id: 'hills_master',
+    title: 'Conquistador de Cuestas',
+    icon: 'trending-up',
+    badge: 'Fuerza',
+    color: 'orange',
+    description: 'Completa al menos 2 sesiones de Cuestas o Fartlek de potencia.',
+    evaluate: (stats) => ({
+      unlocked: stats.hillsCount >= 2,
+      progress: Math.min(100, Math.round((stats.hillsCount / 2) * 100)),
+      current: `${stats.hillsCount} / 2 sesiones`
+    })
+  },
+  {
+    id: 'goal_finisher',
+    title: 'Conquistador de Meta',
+    icon: 'trophy',
+    badge: 'Competición',
+    color: 'amber',
+    description: 'Completa un entrenamiento tipo Competición / Test o una carrera objetivo.',
+    evaluate: (stats) => ({
+      unlocked: stats.raceCount >= 1,
+      progress: stats.raceCount >= 1 ? 100 : 0,
+      current: `${stats.raceCount} / 1 carrera finalizada`
+    })
+  }
+];
+
+function evaluateRunnerTrophies() {
+  const completed = appState.workouts.filter(
+    (w) => (w.status === 'completed' || w.status === 'modified') && Number(w.actualKm) > 0
+  );
+
+  const totalKm = completed.reduce((acc, w) => acc + (Number(w.actualKm) || 0), 0);
+  const maxDistanceKm = completed.reduce((max, w) => Math.max(max, Number(w.actualKm) || 0), 0);
+
+  // Semana activa
+  const monday = getMondayOfWeek(0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const monISO = formatDateISO(monday);
+  const sunISO = formatDateISO(sunday);
+  const currentWeekCompleted = completed.filter((w) => w.date >= monISO && w.date <= sunISO).length;
+
+  // Ritmos y cadencias
+  let hasFastPaceSub5 = false;
+  let bestPaceDec = null;
+  let maxCadence = 0;
+  let hillsCount = 0;
+  let raceCount = 0;
+  let easyKm = 0;
+
+  completed.forEach((w) => {
+    const km = Number(w.actualKm) || 0;
+    const min = Number(w.actualMin) || 0;
+    if (km >= 3 && min > 0) {
+      const paceDec = min / km;
+      if (!bestPaceDec || paceDec < bestPaceDec) bestPaceDec = paceDec;
+      if (paceDec < 5.0) hasFastPaceSub5 = true;
+    }
+    if (Number(w.actualCadence) > maxCadence) {
+      maxCadence = Number(w.actualCadence);
+    }
+    if (w.type === 'hills' || w.type === 'fartlek') {
+      hillsCount++;
+    }
+    if (w.type === 'race') {
+      raceCount++;
+    }
+    if (w.type === 'easy' || w.type === 'long') {
+      easyKm += km;
+    }
+  });
+
+  const aerobicPct = totalKm > 0 ? Math.round((easyKm / totalKm) * 100) : 0;
+
+  const stats = {
+    completedCount: completed.length,
+    totalKm,
+    maxDistanceKm,
+    currentWeekCompleted,
+    hasFastPaceSub5,
+    bestPaceDec,
+    maxCadence,
+    hillsCount,
+    raceCount,
+    aerobicPct
+  };
+
+  const results = TROPHIES_CATALOG.map((t) => {
+    const res = t.evaluate(stats);
+    return {
+      ...t,
+      unlocked: res.unlocked,
+      progress: res.progress,
+      current: res.current
+    };
+  });
+
+  const unlockedCount = results.filter((r) => r.unlocked).length;
+
+  let runnerLevel = 'Iniciado';
+  if (unlockedCount >= 8) runnerLevel = 'Leyenda del Running';
+  else if (unlockedCount >= 6) runnerLevel = 'Titán del Asfalto';
+  else if (unlockedCount >= 4) runnerLevel = 'Fondista Avanzado';
+  else if (unlockedCount >= 2) runnerLevel = 'Corredor Constante';
+
+  return {
+    results,
+    unlockedCount,
+    totalTrophies: TROPHIES_CATALOG.length,
+    stats,
+    runnerLevel
+  };
+}
+
+function renderTrophiesShowcase() {
+  const data = evaluateRunnerTrophies();
+
+  // Badges y pills en el dashboard
+  const unlockedBadge = document.getElementById('unlockedTrophiesBadge');
+  if (unlockedBadge) {
+    unlockedBadge.textContent = `${data.unlockedCount} de ${data.totalTrophies} Desbloqueados`;
+  }
+  const unlockedPill = document.getElementById('unlockedTrophiesPill');
+  if (unlockedPill) {
+    unlockedPill.textContent = `${data.unlockedCount}/${data.totalTrophies}`;
+  }
+
+  // Mini vitrina en el Dashboard (primeros 6)
+  const dashboardContainer = document.getElementById('dashboardTrophiesShowcase');
+  if (dashboardContainer) {
+    dashboardContainer.innerHTML = data.results.slice(0, 6).map((t) => {
+      const isUnlocked = t.unlocked;
+      return `
+        <div class="trophy-card ${isUnlocked ? 'unlocked' : 'locked'} p-3 rounded-xl border flex flex-col items-center text-center justify-between min-h-[110px] transition-all">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center ${
+            isUnlocked
+              ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+          }">
+            <i data-lucide="${t.icon}" class="w-4 h-4"></i>
+          </div>
+          <div class="w-full mt-2">
+            <h5 class="text-[11px] font-bold ${isUnlocked ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'} truncate" title="${t.title}">
+              ${t.title}
+            </h5>
+            <span class="text-[10px] ${isUnlocked ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-slate-400'} block">
+              ${isUnlocked ? '¡Desbloqueado!' : `${t.progress}%`}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Actualizar Modal completo si existe
+  const countEl = document.getElementById('trophiesUnlockedCount');
+  if (countEl) countEl.textContent = `${data.unlockedCount} de ${data.totalTrophies}`;
+
+  const totalKmEl = document.getElementById('trophiesTotalKm');
+  if (totalKmEl) totalKmEl.textContent = `${data.stats.totalKm.toFixed(1)} km`;
+
+  const streakEl = document.getElementById('trophiesStreakWeeks');
+  if (streakEl) streakEl.textContent = `${data.stats.currentWeekCompleted} esta semana`;
+
+  const levelEl = document.getElementById('trophiesRunnerLevel');
+  if (levelEl) levelEl.textContent = data.runnerLevel;
+
+  const fullGrid = document.getElementById('trophiesFullGrid');
+  if (fullGrid) {
+    fullGrid.innerHTML = data.results.map((t) => {
+      const isUnlocked = t.unlocked;
+      return `
+        <div class="trophy-card ${isUnlocked ? 'unlocked' : 'locked'} p-3.5 rounded-xl border flex items-start gap-3 transition-all">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            isUnlocked
+              ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+          }">
+            <i data-lucide="${t.icon}" class="w-5 h-5"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-1 mb-0.5">
+              <h5 class="text-xs font-bold ${isUnlocked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'} truncate">
+                ${t.title}
+              </h5>
+              <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                isUnlocked
+                  ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+              }">${t.badge}</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">${t.description}</p>
+            <div class="mt-2">
+              <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                <span>${t.current}</span>
+                <span class="${isUnlocked ? 'font-bold text-amber-600 dark:text-amber-400' : ''}">${isUnlocked ? 'Completado' : `${t.progress}%`}</span>
+              </div>
+              <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div class="h-1.5 rounded-full ${isUnlocked ? 'bg-amber-500' : 'bg-slate-400'}" style="width: ${t.progress}%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function openTrophiesModal() {
+  const modal = document.getElementById('trophiesModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  renderTrophiesShowcase();
+}
+
+function closeTrophiesModal() {
+  const modal = document.getElementById('trophiesModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+// ============================================================================
+// FEATURE 5: RUTINAS GUIADAS RÁPIDAS CON TEMPORIZADOR Y BEEPS SONOROS
+// ============================================================================
+
+const GUIDED_ROUTINES_CATALOG = {
+  warmup: {
+    id: 'warmup',
+    name: 'Activación Pre-Carrera Dinámica',
+    durationMinutes: 5,
+    exercises: [
+      {
+        name: 'Balanceos de Pierna Frontal & Posterior',
+        durationSec: 45,
+        tip: 'Apóyate en un árbol o pared. Movimiento fluido desde la cadera para despertar psoas e isquiotibiales.'
+      },
+      {
+        name: 'Balanceos Laterales de Cadera',
+        durationSec: 45,
+        tip: 'Cruza la pierna al frente y ábrela al lateral. Activa los abductores y el glúteo medio para estabilizar la pelvis.'
+      },
+      {
+        name: 'Sentadillas Profundas con Elevación de Talones',
+        durationSec: 50,
+        tip: 'Baja controlado y al subir elévate sobre las puntas de los pies. Bombea sangre hacia los gemelos y sóleos.'
+      },
+      {
+        name: 'Zancadas Dinámicas Cortas hacia Adelante',
+        durationSec: 50,
+        tip: 'Paso corto y firme con torso erguido. Activa la extensión de cadera y el cuádriceps de forma dinámica.'
+      },
+      {
+        name: 'Skips Bajos con Tobillo Reactivo (A-Skips)',
+        durationSec: 45,
+        tip: 'Contacto reactivo y breve con el metatarso. Despierta el reflejo miotático y la rigidez elástica del tendón de Aquiles.'
+      },
+      {
+        name: 'Progresiones de Trote en el Sitio',
+        durationSec: 35,
+        tip: 'Acelera suavemente los últimos 15 segundos para elevar la frecuencia cardíaca antes de comenzar a correr.'
+      }
+    ]
+  },
+  soleus: {
+    id: 'soleus',
+    name: 'Fuerza Reactiva Sóleos & Tendón de Aquiles',
+    durationMinutes: 8,
+    exercises: [
+      {
+        name: 'Elevación de Talón con Rodilla Recta (Pierna Derecha)',
+        durationSec: 50,
+        tip: 'Sobre un escalón: sube en 1 segundo y baja en 3 segundos. Carga el gastrocnemio.'
+      },
+      {
+        name: 'Elevación de Talón con Rodilla Recta (Pierna Izquierda)',
+        durationSec: 50,
+        tip: 'Mismo ritmo: control excéntrico estricto para fortalecer las fibras profundas.'
+      },
+      {
+        name: 'Elevación de Talón con Rodilla Flexionada a 30° (Derecha)',
+        durationSec: 50,
+        tip: 'Al doblar la rodilla aíslas el sóleo, el músculo que soporta hasta 6-8 veces tu peso corporal en cada zancada.'
+      },
+      {
+        name: 'Elevación de Talón con Rodilla Flexionada a 30° (Izquierda)',
+        durationSec: 50,
+        tip: 'Mantén la flexión de rodilla constante durante toda la elevación.'
+      },
+      {
+        name: 'Puente de Glúteo Unipodal con Isometría',
+        durationSec: 50,
+        tip: '25 segundos por pierna. Clave para evitar el colapso de cadera y la sobrecarga del tendón rotuliano.'
+      },
+      {
+        name: 'Isometría en Pared sobre Puntas de Pie (Wall Sit)',
+        durationSec: 45,
+        tip: 'Espalda contra pared a 90°, despega talones 3 cm del suelo y sostén firme. Máxima rigidez tendinosa.'
+      }
+    ]
+  },
+  cooldown: {
+    id: 'cooldown',
+    name: 'Vuelta a la Calma & Movilidad Post-Carrera',
+    durationMinutes: 6,
+    exercises: [
+      {
+        name: 'Estiramiento Pasivo Suave de Sóleo contra Pared',
+        durationSec: 50,
+        tip: 'Rodilla trasera flexionada y talón completamente apoyado en el suelo. Siente la tensión suave sin dolor.'
+      },
+      {
+        name: 'Estiramiento de Gemelo Alto y Fascia Plantar',
+        durationSec: 50,
+        tip: 'Pierna trasera recta, talón al suelo. Respira hondo y relaja la mandíbula.'
+      },
+      {
+        name: 'Bisagra de Cadera y Descarga de Isquios',
+        durationSec: 50,
+        tip: 'Rodillas microflexionadas, deja caer el torso suavemente para descomprimir la zona lumbar.'
+      },
+      {
+        name: 'Apertura de Psoas en Zancada Baja (Lunge)',
+        durationSec: 60,
+        tip: '30s por pierna. Apoya la rodilla en el suelo y empuja suavemente la pelvis hacia adelante.'
+      },
+      {
+        name: 'Torsión Torácica en Suelo con Respiración',
+        durationSec: 50,
+        tip: 'Abre el pecho y relaja la columna tras el impacto del asfalto.'
+      },
+      {
+        name: 'Respiración Diafragmática 4-7-8 de Calma',
+        durationSec: 45,
+        tip: 'Inhala en 4s, retén 7s y exhala en 8s. Activa el sistema nervioso parasimpático para acelerar la recuperación.'
+      }
+    ]
+  }
+};
+
+let routineTimerState = {
+  currentRoutineId: 'warmup',
+  exerciseIndex: 0,
+  remainingSeconds: 45,
+  totalExerciseSeconds: 45,
+  isRunning: false,
+  intervalId: null,
+  soundEnabled: true
+};
+
+function playTimerBeep(isFinal = false) {
+  if (!routineTimerState.soundEnabled) return;
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+
+    if (isFinal) {
+      // Doble tono triunfal al terminar ejercicio
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(660, ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.18);
+      gain1.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start();
+      osc1.stop(ctx.currentTime + 0.25);
+    } else {
+      // Beep corto de aviso (3, 2, 1)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.09);
+    }
+  } catch (e) {
+    // Audio context may be restricted before interaction
+  }
+}
+
+function openRoutineTimerModal(routineKey = 'warmup') {
+  const modal = document.getElementById('routineTimerModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  selectGuidedRoutine(routineKey);
+}
+
+function closeRoutineTimerModal() {
+  pauseRoutineTimer();
+  const modal = document.getElementById('routineTimerModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function selectGuidedRoutine(routineKey) {
+  if (!GUIDED_ROUTINES_CATALOG[routineKey]) routineKey = 'warmup';
+  pauseRoutineTimer();
+
+  routineTimerState.currentRoutineId = routineKey;
+  routineTimerState.exerciseIndex = 0;
+  const routine = GUIDED_ROUTINES_CATALOG[routineKey];
+  const firstEx = routine.exercises[0];
+  routineTimerState.remainingSeconds = firstEx.durationSec;
+  routineTimerState.totalExerciseSeconds = firstEx.durationSec;
+
+  // Actualizar estilos de los botones selectores
+  ['warmup', 'soleus', 'cooldown'].forEach((key) => {
+    const btn = document.getElementById(`routineBtn-${key}`);
+    if (btn) {
+      if (key === routineKey) {
+        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow-sm transition';
+      } else {
+        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition';
+      }
+    }
+  });
+
+  updateRoutineTimerUI();
+}
+
+function updateRoutineTimerUI() {
+  const routine = GUIDED_ROUTINES_CATALOG[routineTimerState.currentRoutineId];
+  if (!routine) return;
+  const currentEx = routine.exercises[routineTimerState.exerciseIndex];
+  if (!currentEx) return;
+
+  const nextEx = routine.exercises[routineTimerState.exerciseIndex + 1];
+
+  // Textos del ejercicio
+  const stepLabel = document.getElementById('routineCurrentStepLabel');
+  if (stepLabel) stepLabel.textContent = `Paso ${routineTimerState.exerciseIndex + 1} de ${routine.exercises.length} — ${routine.name}`;
+
+  const exName = document.getElementById('routineExerciseName');
+  if (exName) exName.textContent = currentEx.name;
+
+  const exTip = document.getElementById('routineExerciseTip');
+  if (exTip) exTip.textContent = currentEx.tip;
+
+  const nextExName = document.getElementById('routineNextExerciseName');
+  if (nextExName) nextExName.textContent = nextEx ? nextEx.name : '¡Último ejercicio!';
+
+  // Reloj
+  const display = document.getElementById('routineTimerDisplay');
+  if (display) {
+    const m = Math.floor(routineTimerState.remainingSeconds / 60);
+    const s = routineTimerState.remainingSeconds % 60;
+    display.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  // Barra de progreso del ejercicio
+  const exBar = document.getElementById('routineExerciseProgressBar');
+  if (exBar) {
+    const pct = routineTimerState.totalExerciseSeconds > 0
+      ? (routineTimerState.remainingSeconds / routineTimerState.totalExerciseSeconds) * 100
+      : 0;
+    exBar.style.width = `${pct}%`;
+  }
+
+  // Barra de progreso total de la rutina
+  const totalBar = document.getElementById('routineTotalProgressBar');
+  const totalPctLabel = document.getElementById('routineTotalProgressPct');
+  if (totalBar) {
+    const completedPct = Math.round((routineTimerState.exerciseIndex / routine.exercises.length) * 100);
+    totalBar.style.width = `${completedPct}%`;
+    if (totalPctLabel) totalPctLabel.textContent = `${completedPct}%`;
+  }
+
+  // Botón Play/Pause
+  const playLabel = document.getElementById('routinePlayPauseLabel');
+  const playIcon = document.getElementById('routinePlayPauseIcon');
+  if (playLabel) {
+    playLabel.textContent = routineTimerState.isRunning ? 'Pausar' : 'Iniciar';
+  }
+  if (playIcon) {
+    playIcon.setAttribute('data-lucide', routineTimerState.isRunning ? 'pause' : 'play');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function toggleRoutinePlayPause() {
+  if (routineTimerState.isRunning) {
+    pauseRoutineTimer();
+  } else {
+    startRoutineTimer();
+  }
+}
+
+function startRoutineTimer() {
+  if (routineTimerState.isRunning) return;
+  routineTimerState.isRunning = true;
+  updateRoutineTimerUI();
+
+  routineTimerState.intervalId = setInterval(() => {
+    if (routineTimerState.remainingSeconds > 0) {
+      routineTimerState.remainingSeconds--;
+      if (routineTimerState.remainingSeconds <= 3 && routineTimerState.remainingSeconds > 0) {
+        playTimerBeep(false);
+      }
+      updateRoutineTimerUI();
+    } else {
+      // Final del ejercicio
+      playTimerBeep(true);
+      const routine = GUIDED_ROUTINES_CATALOG[routineTimerState.currentRoutineId];
+      if (routineTimerState.exerciseIndex < routine.exercises.length - 1) {
+        nextRoutineExercise();
+      } else {
+        // Rutina completada
+        pauseRoutineTimer();
+        showToast(`¡Excelente trabajo! Rutina "${routine.name}" finalizada.`);
+        const totalBar = document.getElementById('routineTotalProgressBar');
+        const totalPctLabel = document.getElementById('routineTotalProgressPct');
+        if (totalBar) totalBar.style.width = '100%';
+        if (totalPctLabel) totalPctLabel.textContent = '100%';
+      }
+    }
+  }, 1000);
+}
+
+function pauseRoutineTimer() {
+  routineTimerState.isRunning = false;
+  if (routineTimerState.intervalId) {
+    clearInterval(routineTimerState.intervalId);
+    routineTimerState.intervalId = null;
+  }
+  updateRoutineTimerUI();
+}
+
+function resetRoutineTimer() {
+  pauseRoutineTimer();
+  const routine = GUIDED_ROUTINES_CATALOG[routineTimerState.currentRoutineId];
+  if (!routine) return;
+  const currentEx = routine.exercises[routineTimerState.exerciseIndex];
+  if (currentEx) {
+    routineTimerState.remainingSeconds = currentEx.durationSec;
+    routineTimerState.totalExerciseSeconds = currentEx.durationSec;
+  }
+  updateRoutineTimerUI();
+}
+
+function nextRoutineExercise() {
+  const routine = GUIDED_ROUTINES_CATALOG[routineTimerState.currentRoutineId];
+  if (!routine) return;
+  if (routineTimerState.exerciseIndex < routine.exercises.length - 1) {
+    routineTimerState.exerciseIndex++;
+    const nextEx = routine.exercises[routineTimerState.exerciseIndex];
+    routineTimerState.remainingSeconds = nextEx.durationSec;
+    routineTimerState.totalExerciseSeconds = nextEx.durationSec;
+    updateRoutineTimerUI();
+  }
+}
+
+function prevRoutineExercise() {
+  if (routineTimerState.exerciseIndex > 0) {
+    routineTimerState.exerciseIndex--;
+    const routine = GUIDED_ROUTINES_CATALOG[routineTimerState.currentRoutineId];
+    const prevEx = routine.exercises[routineTimerState.exerciseIndex];
+    routineTimerState.remainingSeconds = prevEx.durationSec;
+    routineTimerState.totalExerciseSeconds = prevEx.durationSec;
+    updateRoutineTimerUI();
+  }
+}
+
+function toggleRoutineSound() {
+  routineTimerState.soundEnabled = !routineTimerState.soundEnabled;
+  const statusText = document.getElementById('routineSoundStatusText');
+  const icon = document.getElementById('routineSoundIcon');
+  if (statusText) {
+    statusText.textContent = routineTimerState.soundEnabled ? 'Sonido ON' : 'Sonido OFF';
+  }
+  if (icon) {
+    icon.setAttribute('data-lucide', routineTimerState.soundEnabled ? 'volume-2' : 'volume-x');
+    icon.className = `w-3.5 h-3.5 ${routineTimerState.soundEnabled ? 'text-emerald-600' : 'text-slate-400'}`;
+  }
+  if (window.lucide) lucide.createIcons();
 }
